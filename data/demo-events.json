@@ -1,0 +1,167 @@
+[
+  {
+    "title": "Freshers Orientation Seminar",
+    "description": "Welcome session for newly admitted students covering campus life, academic expectations, student support services, and an overview of PTI departments. Parents and guardians are welcome for the first hour.",
+    "event_date": "2026-08-12",
+    "event_time": "09:00",
+    "location": "Main Auditorium, PTI Effurun",
+    "category": "academic",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["orientation", "freshers", "academic"]
+  },
+  {
+    "title": "Petroleum Engineering Guest Lecture",
+    "description": "Industry experts from NNPC discuss modern drilling technologies, HSE practices, and career pathways for petroleum engineering students. Q&A and networking follow the talk.",
+    "event_date": "2026-08-18",
+    "event_time": "14:00",
+    "location": "Lecture Theatre 1, Engineering Complex",
+    "category": "academic",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["petroleum", "guestlecture", "industry"]
+  },
+  {
+    "title": "Library Research Skills Workshop",
+    "description": "Hands-on workshop on using the PTI digital library, academic databases, citation tools, and avoiding plagiarism. Bring your laptop if possible.",
+    "event_date": "2026-08-20",
+    "event_time": "11:00",
+    "location": "ICT Centre, Library Complex",
+    "category": "academic",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["library", "research", "workshop"]
+  },
+  {
+    "title": "Campus Cultural Night",
+    "description": "An evening of music, dance, drama, and fashion celebrating the diverse cultures of the PTI community. Food stalls open from 5 PM; main performances start at 7 PM.",
+    "event_date": "2026-08-22",
+    "event_time": "17:00",
+    "location": "Multipurpose Hall, PTI Effurun",
+    "category": "social",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["culturalnight", "entertainment", "campuslife"]
+  },
+  {
+    "title": "SUG Meet & Greet",
+    "description": "Informal hangout with Student Union executives. Share feedback, learn about upcoming initiatives, and meet course representatives from other departments.",
+    "event_date": "2026-08-15",
+    "event_time": "16:00",
+    "location": "Student Affairs Building Lawn",
+    "category": "social",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["sug", "students", "community"]
+  },
+  {
+    "title": "Inter-Department Football Final",
+    "description": "Championship match of the PTI inter-department football tournament. Come support your department — refreshments available at the sidelines.",
+    "event_date": "2026-08-29",
+    "event_time": "15:30",
+    "location": "Sports Complex Football Field",
+    "category": "sports",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["football", "tournament", "sports"]
+  },
+  {
+    "title": "Morning Fitness Bootcamp",
+    "description": "Free outdoor fitness session for students and staff. Warm-up, cardio circuits, and cool-down stretches. Wear sportswear and bring a water bottle.",
+    "event_date": "2026-08-08",
+    "event_time": "06:30",
+    "location": "Sports Complex Track",
+    "category": "sports",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["fitness", "wellness", "bootcamp"]
+  },
+  {
+    "title": "Table Tennis Open Day",
+    "description": "Casual open play and mini-tournament brackets for beginners and intermediates. Rackets available to borrow; sign up at the indoor games hall on arrival.",
+    "event_date": "2026-09-05",
+    "event_time": "10:00",
+    "location": "Indoor Games Hall, Sports Complex",
+    "category": "sports",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["tabletennis", "recreation"]
+  },
+  {
+    "title": "Sunday Chapel Service",
+    "description": "Weekly interdenominational worship service for the PTI community. All students and staff are welcome. Special choir performance this week.",
+    "event_date": "2026-08-09",
+    "event_time": "09:00",
+    "location": "PTI Chapel",
+    "category": "religious",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["chapel", "worship", "sunday"]
+  },
+  {
+    "title": "Ramadan Iftar Gathering",
+    "description": "Community iftar hosted by the Muslim Students Society. Fasting and non-fasting students are welcome. Please RSVP so catering can plan portions.",
+    "event_date": "2026-03-10",
+    "event_time": "18:45",
+    "location": "Multipurpose Hall, PTI Effurun",
+    "category": "religious",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["iftar", "ramadan", "mssn"]
+  },
+  {
+    "title": "Electrical Dept Project Exhibition",
+    "description": "Final-year and ND students showcase projects in power systems, electronics, and automation. Industry judges will award prizes for innovation and presentation.",
+    "event_date": "2026-09-12",
+    "event_time": "10:00",
+    "location": "Electrical Engineering Lab Block",
+    "category": "departmental",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["electrical", "exhibition", "projects"]
+  },
+  {
+    "title": "Welding & Fabrication Skills Fair",
+    "description": "Live demos, safety briefings, and employer booths focused on welding and fabrication career paths. PPE required for demo zones.",
+    "event_date": "2026-09-18",
+    "event_time": "09:30",
+    "location": "Welding Workshop, Industrial Area",
+    "category": "departmental",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["welding", "skills", "hse"]
+  },
+  {
+    "title": "Computer Science Hack Night",
+    "description": "Overnight coding sprint for CS and ICT students. Form teams of up to four, pick a campus problem, and build a prototype. Snacks provided; bring chargers.",
+    "event_date": "2026-08-28",
+    "event_time": "18:00",
+    "location": "ICT Centre Lab A",
+    "category": "departmental",
+    "flyer_url": null,
+    "visibility": "private",
+    "hashtags": ["hackathon", "coding", "ict"]
+  },
+  {
+    "title": "Staff Development Briefing",
+    "description": "Closed briefing for academic staff on the new semester calendar, exam moderation schedule, and LMS updates. Departmental HODs should attend or send a representative.",
+    "event_date": "2026-08-11",
+    "event_time": "13:00",
+    "location": "Senate Chamber, Admin Block",
+    "category": "departmental",
+    "flyer_url": null,
+    "visibility": "private",
+    "hashtags": ["staff", "briefing"]
+  },
+  {
+    "title": "Alumni Mentorship Mixer",
+    "description": "Past event for testing history views: PTI alumni met current students for career advice in oil & gas, manufacturing, and tech. Photos and notes are available from Student Affairs.",
+    "event_date": "2026-07-15",
+    "event_time": "15:00",
+    "location": "Main Auditorium Foyer",
+    "category": "social",
+    "flyer_url": null,
+    "visibility": "public",
+    "hashtags": ["alumni", "mentorship", "careers"]
+  }
+]

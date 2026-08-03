@@ -1,13 +1,28 @@
 "use client";
 
+import { Bell, LogOut, LayoutDashboard, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getGoogleAvatarUrl, getGoogleDisplayName } from "@/lib/google-user";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
+import { NotificationSettings } from "@/components/NotificationSettings";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 export function AuthButton() {
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -25,10 +40,11 @@ export function AuthButton() {
   }, [supabase.auth]);
 
   const signIn = async () => {
+    const next = window.location.pathname + window.location.search;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/post`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   };
@@ -40,34 +56,96 @@ export function AuthButton() {
 
   if (loading) {
     return (
-      <span className="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500">
-        ...
-      </span>
+      <div className="size-9 animate-pulse rounded-full bg-muted" aria-hidden />
     );
   }
 
   if (user) {
+    const avatarUrl = getGoogleAvatarUrl(user);
+    const displayName = getGoogleDisplayName(user);
+    const initials = displayName
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
     return (
-      <div className="flex items-center gap-2">
-        <span className="hidden max-w-[140px] truncate text-sm text-gray-600 sm:inline">
-          {user.email}
-        </span>
-        <button
-          onClick={signOut}
-          className="rounded-lg border border-pti-green/30 px-3 py-2 text-sm font-medium text-pti-green transition-colors hover:bg-pti-green/10"
-        >
-          Sign out
-        </button>
-      </div>
+      <>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-pti-green hover:bg-pti-green/10 hover:text-pti-green"
+            onClick={() => setSettingsOpen(true)}
+            title="Notification settings"
+            aria-label="Notification settings"
+          >
+            <Bell className="size-4" />
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full p-0"
+                aria-label="Account menu"
+              >
+                <Avatar className="size-9 border border-pti-green/20">
+                  {avatarUrl ? (
+                    <AvatarImage src={avatarUrl} alt={displayName} />
+                  ) : null}
+                  <AvatarFallback className="bg-pti-green/15 text-pti-green">
+                    {initials || <UserRound className="size-4" />}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <p className="truncate text-sm font-medium">{displayName}</p>
+                {user.email && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {user.email}
+                  </p>
+                )}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard">
+                  <LayoutDashboard className="size-4" />
+                  Dashboard
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                <Bell className="size-4" />
+                Notifications
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="size-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <NotificationSettings
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+        />
+      </>
     );
   }
 
   return (
-    <button
+    <Button
       onClick={signIn}
-      className="rounded-lg bg-pti-gold px-3 py-2 text-sm font-medium text-pti-green transition-colors hover:bg-pti-gold/90"
+      size="sm"
+      className="bg-pti-gold px-2.5 text-pti-green hover:bg-pti-gold/90 sm:px-3"
     >
-      Sign in with Google
-    </button>
+      <span className="sm:hidden">Sign in</span>
+      <span className="hidden sm:inline">Sign in with Google</span>
+    </Button>
   );
 }

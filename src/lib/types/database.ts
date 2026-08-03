@@ -13,6 +13,8 @@ export type EventCategory =
   | "religious"
   | "departmental";
 
+export type EventVisibility = "public" | "private";
+
 export interface Database {
   public: {
     Tables: {
@@ -28,6 +30,11 @@ export interface Database {
           flyer_url: string | null;
           created_by: string;
           created_at: string;
+          visibility: EventVisibility;
+          hashtags: string[];
+          host_name: string;
+          host_avatar_url: string | null;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -40,6 +47,11 @@ export interface Database {
           flyer_url?: string | null;
           created_by: string;
           created_at?: string;
+          visibility?: EventVisibility;
+          hashtags?: string[];
+          host_name?: string;
+          host_avatar_url?: string | null;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -52,24 +64,83 @@ export interface Database {
           flyer_url?: string | null;
           created_by?: string;
           created_at?: string;
+          visibility?: EventVisibility;
+          hashtags?: string[];
+          host_name?: string;
+          host_avatar_url?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };
-      subscribers: {
+      event_rsvps: {
         Row: {
           id: string;
-          email: string;
-          subscribed_at: string;
+          event_id: string;
+          user_id: string;
+          display_name: string;
+          avatar_url: string | null;
+          created_at: string;
         };
         Insert: {
           id?: string;
-          email: string;
-          subscribed_at?: string;
+          event_id: string;
+          user_id: string;
+          display_name: string;
+          avatar_url?: string | null;
+          created_at?: string;
         };
         Update: {
           id?: string;
-          email?: string;
-          subscribed_at?: string;
+          event_id?: string;
+          user_id?: string;
+          display_name?: string;
+          avatar_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          push_enabled: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          push_enabled?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          push_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -78,9 +149,21 @@ export interface Database {
     Functions: Record<string, never>;
     Enums: {
       event_category: EventCategory;
+      event_visibility: EventVisibility;
     };
     CompositeTypes: Record<string, never>;
   };
 }
 
 export type Event = Database["public"]["Tables"]["events"]["Row"];
+export type EventRsvp = Database["public"]["Tables"]["event_rsvps"]["Row"];
+export type NotificationPreferences =
+  Database["public"]["Tables"]["notification_preferences"]["Row"];
+
+export type EventWithRsvps = Event & {
+  event_rsvps: Pick<EventRsvp, "display_name" | "avatar_url" | "user_id">[];
+};
+
+export type EventWithRsvpCount = Event & {
+  rsvp_count: number;
+};

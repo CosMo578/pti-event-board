@@ -8,23 +8,42 @@ import {
   ALLOWED_FLYER_TYPES,
   EVENT_CATEGORIES,
   MAX_FLYER_SIZE,
+  categoryToLabel,
   labelToCategory,
 } from "@/lib/constants";
+import { formatHashtagsForInput, parseHashtagsInput } from "@/lib/hashtags";
+import type { Event, EventVisibility } from "@/lib/types/database";
 
-export function EventForm() {
+interface EventFormProps {
+  mode?: "create" | "edit";
+  event?: Event;
+}
+
+export function EventForm({ mode = "create", event }: EventFormProps) {
   const router = useRouter();
   const supabase = createClient();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [eventTime, setEventTime] = useState("");
-  const [location, setLocation] = useState("");
-  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [description, setDescription] = useState(event?.description ?? "");
+  const [eventDate, setEventDate] = useState(event?.event_date ?? "");
+  const [eventTime, setEventTime] = useState(
+    event?.event_time?.slice(0, 5) ?? "",
+  );
+  const [location, setLocation] = useState(event?.location ?? "");
+  const [category, setCategory] = useState(
+    event ? categoryToLabel(event.category) : "",
+  );
+  const [visibility, setVisibility] = useState<EventVisibility>(
+    event?.visibility ?? "public",
+  );
+  const [hashtagsInput, setHashtagsInput] = useState(
+    formatHashtagsForInput(event?.hashtags),
+  );
   const [flyer, setFlyer] = useState<File | null>(null);
-  const [flyerPreview, setFlyerPreview] = useState<string | null>(null);
+  const [flyerPreview, setFlyerPreview] = useState<string | null>(
+    event?.flyer_url ?? null,
+  );
   const [loading, setLoading] = useState(false);
-  const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState("");
 
   const handleFlyerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,37 +69,6 @@ export function EventForm() {
     setFlyerPreview(URL.createObjectURL(file));
   };
 
-  const suggestCategory = async () => {
-    if (!title.trim() || !description.trim()) {
-      setError("Enter a title and description first.");
-      return;
-    }
-
-    setSuggesting(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/suggest-category", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Could not suggest category.");
-        return;
-      }
-
-      setCategory(data.category);
-    } catch {
-      setError("Could not suggest category. Please select manually.");
-    } finally {
-      setSuggesting(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -97,7 +85,7 @@ export function EventForm() {
         return;
       }
 
-      let flyerUrl: string | null = null;
+      let flyerUrl: string | null = event?.flyer_url ?? null;
 
       if (flyer) {
         const ext = flyer.name.split(".").pop() ?? "jpg";
@@ -127,29 +115,37 @@ export function EventForm() {
         return;
       }
 
-      const res = await fetch("/api/events", {
-        method: "POST",
+      const payload = {
+        title,
+        description,
+        event_date: eventDate,
+        event_time: eventTime,
+        location,
+        category: categoryValue,
+        flyer_url: flyerUrl,
+        visibility,
+        hashtags: parseHashtagsInput(hashtagsInput),
+      };
+
+      const url =
+        mode === "edit" && event ? `/api/events/${event.id}` : "/api/events";
+      const method = mode === "edit" ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          event_date: eventDate,
-          event_time: eventTime,
-          location,
-          category: categoryValue,
-          flyer_url: flyerUrl,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Failed to post event.");
+        setError(data.error ?? "Failed to save event.");
         setLoading(false);
         return;
       }
 
-      router.push("/");
+      router.push(`/events/${data.id ?? event?.id}`);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -206,7 +202,7 @@ export function EventForm() {
             required
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
-            min={new Date().toISOString().split("T")[0]}
+            min={mode === "create" ? new Date().toISOString().split("T")[0] : undefined}
             className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
           />
         </div>
@@ -248,22 +244,12 @@ export function EventForm() {
       </div>
 
       <div>
-        <div className="flex items-center justify-between">
-          <label
-            htmlFor="category"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Category
-          </label>
-          <button
-            type="button"
-            onClick={suggestCategory}
-            disabled={suggesting || !title || !description}
-            className="rounded-lg bg-pti-gold px-3 py-1.5 text-xs font-medium text-pti-green transition-colors hover:bg-pti-gold/90 disabled:opacity-50"
-          >
-            {suggesting ? "Suggesting..." : "Suggest Category"}
-          </button>
-        </div>
+        <label
+          htmlFor="category"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Category
+        </label>
         <select
           id="category"
           required
@@ -278,6 +264,57 @@ export function EventForm() {
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <label
+          htmlFor="hashtags"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Hashtags
+        </label>
+        <input
+          id="hashtags"
+          type="text"
+          value={hashtagsInput}
+          onChange={(e) => setHashtagsInput(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+          placeholder="e.g. seminar, engineering, nd1"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Comma-separated, up to 10 tags
+        </p>
+      </div>
+
+      <div>
+        <span className="block text-sm font-medium text-gray-700">
+          Visibility
+        </span>
+        <div className="mt-2 flex gap-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="visibility"
+              value="public"
+              checked={visibility === "public"}
+              onChange={() => setVisibility("public")}
+            />
+            Public
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="visibility"
+              value="private"
+              checked={visibility === "private"}
+              onChange={() => setVisibility("private")}
+            />
+            Private (unlisted)
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-gray-500">
+          Private events are only accessible via direct link
+        </p>
       </div>
 
       <div>
@@ -320,7 +357,13 @@ export function EventForm() {
         disabled={loading}
         className="w-full rounded-lg bg-pti-green px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-pti-green-dark disabled:opacity-50 sm:w-auto"
       >
-        {loading ? "Posting..." : "Post Event"}
+        {loading
+          ? mode === "edit"
+            ? "Saving..."
+            : "Posting..."
+          : mode === "edit"
+            ? "Save Changes"
+            : "Post Event"}
       </button>
     </form>
   );

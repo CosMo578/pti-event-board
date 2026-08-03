@@ -1,22 +1,25 @@
 # PTI Campus Event Board
 
-A responsive web application for the Petroleum Training Institute (PTI), Effurun, Delta State, Nigeria. Students and departments can post upcoming campus events; all visitors can browse them and subscribe to a weekly email digest.
+A responsive web application for the Petroleum Training Institute (PTI), Effurun, Delta State, Nigeria. Students and departments can post campus events; visitors can browse, RSVP, and receive push notifications.
 
 ## Tech Stack
 
-- **Next.js 16** (App Router) + TypeScript + Tailwind CSS v4
+- **Next.js 16** (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui
 - **Supabase** — Auth (Google OAuth), PostgreSQL, Storage, Edge Functions, pg_cron
-- **Resend** — Weekly email digest
-- **Google Gemini** — AI category suggestion on event posting
+- **Web Push** — Browser notifications (daily digest + new public events)
 
 ## Features
 
-- Browse upcoming events (no login required)
-- Filter events by category (Academic, Social, Sports, Religious, Departmental)
-- Subscribe to weekly email digest (no login required)
-- Post events with Google sign-in (title, description, date, time, location, category, optional flyer)
-- AI "Suggest Category" button powered by Gemini
-- Weekly cron job (Monday 8:00 AM WAT) sends digest via Supabase Edge Function + Resend
+- Browse upcoming public events (no login required)
+- Signed-in users can also browse past events
+- Search by event name / hashtag and filter by category
+- Event detail pages with share link, hashtags, host info, RSVP, attendee avatars
+- Add events to Google Calendar or download `.ics`
+- Post, edit, and delete events with Google sign-in
+- Creator dashboard with RSVP counts and attendee management
+- Public or private (unlisted) event visibility
+- Browser push notifications: daily digest + instant alerts for new public events
+- Optional flyer upload (JPG, PNG, WEBP — max 5 MB)
 
 ## Getting Started
 
@@ -35,7 +38,17 @@ Fill in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-GEMINI_API_KEY=your-gemini-api-key
+CRON_SECRET=your-cron-secret
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your-vapid-public-key
+VAPID_PRIVATE_KEY=your-vapid-private-key
+VAPID_SUBJECT=mailto:you@gmail.com
+```
+
+Generate VAPID keys:
+
+```bash
+npx web-push generate-vapid-keys
 ```
 
 ### 3. Set up Supabase
@@ -56,33 +69,28 @@ select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');
 select vault.create_secret('<your-cron-secret>', 'cron_secret');
 ```
 
-Use the same `cron_secret` value when deploying the edge function.
+Use the same `cron_secret` value in `.env.local` and edge function secrets.
 
-### 5. Deploy the weekly digest Edge Function
+### 5. Deploy Edge Functions
 
 Set edge function secrets:
 
 ```bash
 pnpm exec supabase secrets set \
-  RESEND_API_KEY=re_xxx \
   CRON_SECRET=your-cron-secret \
-  FROM_EMAIL="PTI Events <digest@yourdomain.com>" \
-  SITE_URL=https://your-app-url.vercel.app
+  SITE_URL=https://your-app-url.vercel.app \
+  VAPID_PUBLIC_KEY=your-vapid-public-key \
+  VAPID_PRIVATE_KEY=your-vapid-private-key \
+  VAPID_SUBJECT=mailto:you@gmail.com
 ```
 
 Deploy:
 
 ```bash
-pnpm exec supabase functions deploy weekly-digest --no-verify-jwt
+pnpm functions:deploy
 ```
 
-### 6. Set up Resend
-
-1. Create an account at [resend.com](https://resend.com)
-2. Verify your sending domain
-3. Create an API key and add it as `RESEND_API_KEY` edge function secret
-
-### 7. Run locally
+### 6. Run locally
 
 ```bash
 pnpm dev
@@ -90,45 +98,61 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Note: Browser push requires HTTPS and works best in production. Use Vercel for full push testing.
+
 ## Project Structure
 
 ```
 src/
   app/
-    page.tsx              # Event listings
-    post/page.tsx         # Post event form
-    auth/callback/        # OAuth callback
+    page.tsx                    # Event listings (upcoming/past)
+    dashboard/page.tsx          # Creator dashboard
+    events/[id]/page.tsx        # Event detail
+    events/[id]/edit/page.tsx   # Edit event
+    post/page.tsx               # Create event
+    auth/callback/              # OAuth callback
     api/
-      events/             # POST create event
-      subscribe/          # POST email subscription
-      suggest-category/   # POST Gemini category suggestion
-  components/             # UI components
-  lib/                    # Supabase clients, types, validations
+      events/                   # CRUD + RSVP
+      notifications/preferences/
+      push/subscribe/
+  components/
+  lib/
 supabase/
-  migrations/             # Database schema, RLS, storage, cron
+  migrations/
   functions/
-    weekly-digest/        # Weekly email digest edge function
+    send-push/                  # Browser push notifications
+public/
+  sw.js                         # Service worker for push
 ```
 
 ## Manual Testing
 
 | Feature | How to test |
 |---------|-------------|
-| Browse events | Visit `/` — cards display sorted by date |
-| Category filter | Click category pills — URL updates with `?category=` |
-| Subscribe | Enter email in footer form |
+| Browse events | Visit `/` — upcoming cards sorted by date |
+| Past events | Sign in, then use the Past tab |
+| Search / category | Use the search box and category select (AND filters) |
+| Event detail | Click any event card |
+| RSVP | Sign in, open event, click "RSVP — I'm attending" |
+| Share / calendar | Use buttons on event detail page |
 | Sign in | Click "Sign in with Google" in navbar |
-| Post event | Visit `/post` while signed in, fill form, upload flyer |
-| Suggest Category | Enter title + description, click "Suggest Category" |
-| Weekly digest | `curl -X POST https://<ref>.supabase.co/functions/v1/weekly-digest -H "Authorization: Bearer <cron-secret>"` |
+| Dashboard | Visit `/dashboard` while signed in |
+| Post event | Visit `/post` while signed in |
+| Edit/delete | Dashboard or event detail → Edit / Delete |
+| Private event | Create with "Private" visibility — hidden from home, accessible via link |
+| Notifications | Sign in → bell / avatar menu → toggle push |
+| Push (new event) | `curl -X POST https://<ref>.supabase.co/functions/v1/send-push -H "Authorization: Bearer <cron-secret>" -H "Content-Type: application/json" -d '{"type":"new_event","eventId":"<uuid>"}'` |
+| Push (daily digest) | `curl -X POST https://<ref>.supabase.co/functions/v1/send-push -H "Authorization: Bearer <cron-secret>" -H "Content-Type: application/json" -d '{"type":"daily_digest"}'` |
 
 ## Cron Schedule
 
-The migration schedules `pg_cron` to run every **Monday at 8:00 AM WAT** (7:00 UTC):
+The migration schedules `pg_cron` to run **daily at 8:00 AM WAT** (7:00 UTC):
 
 ```
-0 7 * * 1
+0 7 * * *
 ```
+
+Triggers `send-push` with `type: daily_digest` (push only — no email).
 
 ## License
 

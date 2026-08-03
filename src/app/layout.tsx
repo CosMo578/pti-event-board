@@ -29,10 +29,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-pti-cream text-gray-900">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <Navbar />
         <main className="flex flex-1 flex-col">{children}</main>
-        <footer className="border-t border-pti-green/10 bg-white py-6 text-center text-sm text-gray-500">
+        <footer className="border-t border-pti-green/10 bg-card py-6 text-center text-sm text-muted-foreground">
           Petroleum Training Institute, Effurun &middot; Delta State, Nigeria
         </footer>
       </body>
