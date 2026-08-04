@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface EventOwnerActionsProps {
   eventId: string;
@@ -44,21 +45,23 @@ export function EventOwnerActions({ eventId }: EventOwnerActionsProps) {
   };
 
   return (
-    <div className="flex flex-wrap gap-3 border-t border-gray-200 pt-6">
-      <Link
-        href={`/events/${eventId}/edit`}
-        className="rounded-lg border border-pti-green/30 px-4 py-2 text-sm font-medium text-pti-green transition-colors hover:bg-pti-green/10"
+    <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:flex-wrap">
+      <Button
+        asChild
+        variant="outline"
+        className="h-10 w-full border-pti-green/30 text-pti-green hover:bg-pti-green/10 sm:w-auto"
       >
-        Edit event
-      </Link>
-      <button
+        <Link href={`/events/${eventId}/edit`}>Edit event</Link>
+      </Button>
+      <Button
         onClick={handleDelete}
         disabled={loading}
-        className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+        variant="outline"
+        className="h-10 w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
       >
         {loading ? "Deleting..." : "Delete event"}
-      </button>
-      {error && <p className="w-full text-sm text-red-600">{error}</p>}
+      </Button>
+      {error && <p className="w-full text-sm text-destructive">{error}</p>}
     </div>
   );
 }

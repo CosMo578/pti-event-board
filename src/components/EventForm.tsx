@@ -13,11 +13,17 @@ import {
 } from "@/lib/constants";
 import { formatHashtagsForInput, parseHashtagsInput } from "@/lib/hashtags";
 import type { Event, EventVisibility } from "@/lib/types/database";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface EventFormProps {
   mode?: "create" | "edit";
   event?: Event;
 }
+
+const fieldClassName =
+  "mt-1.5 h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function EventForm({ mode = "create", event }: EventFormProps) {
   const router = useRouter();
@@ -80,7 +86,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setError("You must be signed in to post an event.");
+        setError("You must be signed in to create an event.");
         setLoading(false);
         return;
       }
@@ -154,108 +160,81 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Event Title
-        </label>
-        <input
+    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+      <div className="min-w-0">
+        <Label htmlFor="title">Event Title</Label>
+        <Input
           id="title"
           type="text"
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+          className={fieldClassName}
           placeholder="e.g. Department of Petroleum Engineering Seminar"
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Description
-        </label>
+      <div className="min-w-0">
+        <Label htmlFor="description">Description</Label>
         <textarea
           id="description"
           required
           rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+          className="mt-1.5 w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           placeholder="Describe the event..."
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label
-            htmlFor="eventDate"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Date
-          </label>
-          <input
+        <div className="min-w-0">
+          <Label htmlFor="eventDate">Date</Label>
+          <Input
             id="eventDate"
             type="date"
             required
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
             min={mode === "create" ? new Date().toISOString().split("T")[0] : undefined}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+            className={fieldClassName}
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="eventTime"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Time
-          </label>
-          <input
+        <div className="min-w-0">
+          <Label htmlFor="eventTime">Time</Label>
+          <Input
             id="eventTime"
             type="time"
             required
             value={eventTime}
             onChange={(e) => setEventTime(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+            className={fieldClassName}
           />
         </div>
       </div>
 
-      <div>
-        <label
-          htmlFor="location"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Location
-        </label>
-        <input
+      <div className="min-w-0">
+        <Label htmlFor="location">Location</Label>
+        <Input
           id="location"
           type="text"
           required
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+          className={fieldClassName}
           placeholder="e.g. Main Auditorium"
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="category"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Category
-        </label>
+      <div className="min-w-0">
+        <Label htmlFor="category">Category</Label>
         <select
           id="category"
           required
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+          className={fieldClassName}
         >
           <option value="">Select a category</option>
           {EVENT_CATEGORIES.map((cat) => (
@@ -266,31 +245,24 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         </select>
       </div>
 
-      <div>
-        <label
-          htmlFor="hashtags"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Hashtags
-        </label>
-        <input
+      <div className="min-w-0">
+        <Label htmlFor="hashtags">Hashtags</Label>
+        <Input
           id="hashtags"
           type="text"
           value={hashtagsInput}
           onChange={(e) => setHashtagsInput(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-pti-green focus:outline-none focus:ring-2 focus:ring-pti-green/20"
+          className={fieldClassName}
           placeholder="e.g. seminar, engineering, nd1"
         />
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-muted-foreground">
           Comma-separated, up to 10 tags
         </p>
       </div>
 
-      <div>
-        <span className="block text-sm font-medium text-gray-700">
-          Visibility
-        </span>
-        <div className="mt-2 flex gap-4">
+      <div className="min-w-0">
+        <span className="block text-sm font-medium">Visibility</span>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="radio"
@@ -312,27 +284,22 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             Private (unlisted)
           </label>
         </div>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-muted-foreground">
           Private events are only accessible via direct link
         </p>
       </div>
 
-      <div>
-        <label
-          htmlFor="flyer"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Flyer Image (optional)
-        </label>
-        <p className="mt-1 text-xs text-gray-500">
+      <div className="min-w-0">
+        <Label htmlFor="flyer">Flyer Image (optional)</Label>
+        <p className="mt-1 text-xs text-muted-foreground">
           JPG, PNG, or WEBP — max 5MB
         </p>
-        <input
+        <Input
           id="flyer"
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={handleFlyerChange}
-          className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-pti-green/10 file:px-4 file:py-2 file:text-sm file:font-medium file:text-pti-green hover:file:bg-pti-green/20"
+          className="mt-2 h-auto w-full min-w-0 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-pti-green/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-pti-green hover:file:bg-pti-green/20"
         />
         {flyerPreview && (
           <Image
@@ -341,30 +308,31 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             width={400}
             height={300}
             unoptimized
-            className="mt-3 max-h-48 rounded-lg border border-gray-200 object-contain"
+            className="mt-3 max-h-48 w-full max-w-full rounded-lg border border-border object-contain"
           />
         )}
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+        <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-pti-green px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-pti-green-dark disabled:opacity-50 sm:w-auto"
+        size="lg"
+        className="h-11 w-full bg-pti-green px-6 text-white hover:bg-pti-green-dark sm:w-auto"
       >
         {loading
           ? mode === "edit"
             ? "Saving..."
-            : "Posting..."
+            : "Creating..."
           : mode === "edit"
             ? "Save Changes"
-            : "Post Event"}
-      </button>
+            : "Create Event"}
+      </Button>
     </form>
   );
 }

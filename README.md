@@ -137,7 +137,7 @@ public/
 | Share / calendar | Use buttons on event detail page |
 | Sign in | Click "Sign in with Google" in navbar |
 | Dashboard | Visit `/dashboard` while signed in |
-| Post event | Visit `/post` while signed in |
+| Create event | Visit `/create` while signed in |
 | Edit/delete | Dashboard or event detail → Edit / Delete |
 | Private event | Create with "Private" visibility — hidden from home, accessible via link |
 | Notifications | Sign in → bell / avatar menu → toggle push |

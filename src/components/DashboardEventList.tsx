@@ -96,7 +96,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
           Create your first campus event to start tracking RSVPs.
         </p>
         <Button asChild className="mt-6">
-          <Link href="/post">Post an event</Link>
+          <Link href="/create">Create an event</Link>
         </Button>
       </div>
     );
@@ -118,11 +118,11 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
           return (
             <Card
               key={event.id}
-              className="flex h-full flex-col gap-0 overflow-hidden py-0"
+              className="flex h-full min-w-0 flex-col gap-0 overflow-hidden py-0"
             >
               <CardHeader className="gap-2 p-4 pb-2">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge className={`border-0 ${badgeClass}`}>
+                  <Badge className={`max-w-full truncate border-0 ${badgeClass}`}>
                     {categoryToLabel(event.category)}
                   </Badge>
                   <Badge variant={past ? "secondary" : "default"}>
@@ -145,12 +145,12 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="flex flex-1 flex-col gap-2 px-4 pb-3 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
+              <CardContent className="flex min-w-0 flex-1 flex-col gap-2 px-4 pb-3 text-sm text-muted-foreground">
+                <span className="inline-flex min-w-0 items-center gap-1.5">
                   <CalendarDays className="size-3.5 shrink-0" />
                   <span className="truncate">{formatDate(event.event_date)}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex min-w-0 items-center gap-1.5">
                   <MapPin className="size-3.5 shrink-0" />
                   <span className="truncate">{event.location}</span>
                 </span>
@@ -162,14 +162,14 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
 
               <Separator />
 
-              <CardFooter className="flex flex-wrap gap-1.5 border-t-0 bg-transparent p-3">
-                <Button asChild variant="outline" size="sm">
+              <CardFooter className="grid grid-cols-2 gap-1.5 border-t-0 bg-transparent p-3">
+                <Button asChild variant="outline" size="sm" className="w-full">
                   <Link href={`/events/${event.id}`}>
                     <Eye className="size-3.5" />
                     View
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="w-full">
                   <Link href={`/events/${event.id}/edit`}>
                     <Pencil className="size-3.5" />
                     Edit
@@ -178,6 +178,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full"
                   onClick={() => setAttendeesEvent(event)}
                 >
                   <Users className="size-3.5" />
@@ -186,7 +187,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={deletingId === event.id}
                   onClick={() => handleDelete(event.id)}
                 >
@@ -223,7 +224,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
               {attendeesEvent.attendees.map((attendee) => (
                 <li
                   key={attendee.user_id}
-                  className="flex items-center gap-3 rounded-lg bg-muted/60 px-3 py-2"
+                  className="flex min-w-0 items-center gap-3 rounded-lg bg-muted/60 px-3 py-2"
                 >
                   {attendee.avatar_url ? (
                     <Image
@@ -232,14 +233,14 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                       width={36}
                       height={36}
                       unoptimized
-                      className="size-9 rounded-full object-cover"
+                      className="size-9 shrink-0 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="flex size-9 items-center justify-center rounded-full bg-pti-green/20 text-sm font-medium text-pti-green">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pti-green/20 text-sm font-medium text-pti-green">
                       {attendee.display_name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="text-sm font-medium">
+                  <span className="min-w-0 truncate text-sm font-medium">
                     {attendee.display_name}
                   </span>
                 </li>

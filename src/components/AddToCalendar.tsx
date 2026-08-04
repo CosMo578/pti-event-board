@@ -2,6 +2,7 @@
 
 import { buildGoogleCalendarUrl, buildIcsContent } from "@/lib/calendar";
 import type { Event } from "@/lib/types/database";
+import { Button } from "@/components/ui/button";
 
 export function AddToCalendar({ event }: { event: Event }) {
   const googleUrl = buildGoogleCalendarUrl(event);
@@ -18,21 +19,23 @@ export function AddToCalendar({ event }: { event: Event }) {
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <a
-        href={googleUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rounded-lg border border-pti-green/30 px-4 py-2 text-sm font-medium text-pti-green transition-colors hover:bg-pti-green/10"
+    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+      <Button
+        asChild
+        variant="outline"
+        className="h-10 w-full border-pti-green/30 text-pti-green hover:bg-pti-green/10 sm:w-auto"
       >
-        Google Calendar
-      </a>
-      <button
+        <a href={googleUrl} target="_blank" rel="noopener noreferrer">
+          Google Calendar
+        </a>
+      </Button>
+      <Button
         onClick={downloadIcs}
-        className="rounded-lg border border-pti-green/30 px-4 py-2 text-sm font-medium text-pti-green transition-colors hover:bg-pti-green/10"
+        variant="outline"
+        className="h-10 w-full border-pti-green/30 text-pti-green hover:bg-pti-green/10 sm:w-auto"
       >
         Download .ics
-      </button>
+      </Button>
     </div>
   );
 }

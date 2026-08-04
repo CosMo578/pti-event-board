@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   DashboardEventList,
@@ -17,8 +16,9 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Proxy redirects signed-out users; this is a safety net for RSC.
   if (!user) {
-    redirect("/?auth=required");
+    return null;
   }
 
   const { data: events, error } = await supabase
@@ -48,7 +48,7 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl flex-1 px-4 py-8 sm:px-6">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-pti-green sm:text-3xl">
             Creator Dashboard
           </h1>
@@ -56,8 +56,8 @@ export default async function DashboardPage() {
             Manage your events, track RSVPs, and update details.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/post">Post new event</Link>
+        <Button asChild className="h-10 w-full shrink-0 sm:w-auto">
+          <Link href="/create">Create new event</Link>
         </Button>
       </div>
 

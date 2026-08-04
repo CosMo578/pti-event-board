@@ -40,11 +40,11 @@ export default async function EditEventPage({ params }: EditPageProps) {
       <h1 className="text-2xl font-bold text-pti-green sm:text-3xl">
         Edit Event
       </h1>
-      <p className="mt-2 text-sm text-gray-600">
+      <p className="mt-2 text-sm text-muted-foreground">
         Update your event details below.
       </p>
 
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
         <EventForm mode="edit" event={event as Event} />
       </div>
     </div>

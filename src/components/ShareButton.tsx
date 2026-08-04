@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface ShareButtonProps {
   title: string;
@@ -26,11 +27,12 @@ export function ShareButton({ title, url }: ShareButtonProps) {
   };
 
   return (
-    <button
+    <Button
       onClick={handleShare}
-      className="rounded-lg border border-pti-green/30 px-4 py-2 text-sm font-medium text-pti-green transition-colors hover:bg-pti-green/10"
+      variant="outline"
+      className="h-10 w-full border-pti-green/30 text-pti-green hover:bg-pti-green/10 sm:w-auto"
     >
       {copied ? "Link copied!" : "Share event"}
-    </button>
+    </Button>
   );
 }

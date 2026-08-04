@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: rootDir,
   },
+  async redirects() {
+    return [
+      {
+        source: "/post",
+        destination: "/create",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

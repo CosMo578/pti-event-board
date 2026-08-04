@@ -1,5 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  getSignInReasonForPath,
+  isPublicPath,
+} from "@/lib/auth-messages";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -25,15 +29,24 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+  // Do not run code between createServerClient and getUser().
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith("/post")) {
+  const { pathname } = request.nextUrl;
+
+  if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    url.searchParams.set("auth", "required");
-    return NextResponse.redirect(url);
+    url.search = "";
+    url.searchParams.set("signin", getSignInReasonForPath(pathname));
+
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;

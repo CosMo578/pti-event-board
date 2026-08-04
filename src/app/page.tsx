@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { EventCard } from "@/components/EventCard";
 import { EventFilters } from "@/components/EventFilters";
+import { EventViewToggle } from "@/components/EventViewToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { labelToCategory } from "@/lib/constants";
 import { escapeIlike, normalizeHashtagQuery } from "@/lib/event-query";
@@ -82,9 +83,23 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <div className="mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6">
       <section className="mb-8">
-        <h1 className="text-2xl font-bold text-pti-green sm:text-3xl">
-          {isPast ? "Past Campus Events" : "Upcoming Campus Events"}
-        </h1>
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <h1 className="min-w-0 flex-1 text-base font-bold leading-snug text-foreground sm:text-2xl sm:leading-tight md:text-3xl">
+            {isPast ? "Past Campus Events" : "Upcoming Campus Events"}
+          </h1>
+          {showPast && (
+            <Suspense
+              fallback={
+                <div
+                  className="h-8 w-36 shrink-0 rounded-full bg-muted sm:h-9 sm:w-[11.5rem]"
+                  aria-hidden
+                />
+              }
+            >
+              <EventViewToggle />
+            </Suspense>
+          )}
+        </div>
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
           Discover what&apos;s happening at PTI, Effurun — seminars, sports,
           socials, and more.
@@ -96,7 +111,7 @@ export default async function Home({ searchParams }: HomeProps) {
         {params.auth === "required" && (
           <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900">
             <AlertDescription>
-              Please sign in with Google to post an event.
+              Please sign in with Google to create an event.
             </AlertDescription>
           </Alert>
         )}
@@ -109,8 +124,8 @@ export default async function Home({ searchParams }: HomeProps) {
         )}
       </section>
 
-      <Suspense fallback={<div className="mb-6 h-24" />}>
-        <EventFilters showPast={showPast} />
+      <Suspense fallback={<div className="mb-6 h-11" />}>
+        <EventFilters />
       </Suspense>
 
       {error && (
@@ -131,13 +146,13 @@ export default async function Home({ searchParams }: HomeProps) {
               ? "Try a different search or category."
               : isPast
                 ? "Past events will appear here once they have ended."
-                : "Check back soon or post a new event if you're signed in."}
+                : "Check back soon or create a new event if you're signed in."}
           </p>
         </div>
       )}
 
       {eventsWithCount.length > 0 && (
-        <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full auto-rows-fr grid-cols-1 items-stretch justify-items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {eventsWithCount.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}

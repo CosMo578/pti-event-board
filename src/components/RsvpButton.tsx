@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface RsvpButtonProps {
   eventId: string;
@@ -22,7 +23,7 @@ export function RsvpButton({
 
   if (!isAuthenticated) {
     return (
-      <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         Sign in with Google to RSVP for this event.
       </p>
     );
@@ -54,23 +55,25 @@ export function RsvpButton({
   };
 
   return (
-    <div>
-      <button
+    <div className="min-w-0">
+      <Button
         onClick={toggleRsvp}
         disabled={loading}
-        className={`rounded-lg px-6 py-3 text-sm font-medium transition-colors disabled:opacity-50 ${
+        size="lg"
+        variant={hasRsvp ? "outline" : "default"}
+        className={
           hasRsvp
-            ? "border border-pti-green bg-white text-pti-green hover:bg-pti-green/10"
-            : "bg-pti-green text-white hover:bg-pti-green-dark"
-        }`}
+            ? "h-11 w-full border-pti-green text-pti-green hover:bg-pti-green/10 sm:w-auto"
+            : "h-11 w-full bg-pti-green text-white hover:bg-pti-green-dark sm:w-auto"
+        }
       >
         {loading
           ? "Updating..."
           : hasRsvp
             ? "Cancel RSVP"
             : "RSVP — I'm attending"}
-      </button>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      </Button>
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>
   );
 }
@@ -82,20 +85,23 @@ interface AttendeeListProps {
 export function AttendeeList({ attendees }: AttendeeListProps) {
   if (attendees.length === 0) {
     return (
-      <p className="text-sm text-gray-500">No one has RSVP&apos;d yet. Be the first!</p>
+      <p className="text-sm text-muted-foreground">
+        No one has RSVP&apos;d yet. Be the first!
+      </p>
     );
   }
 
   return (
-    <div>
-      <p className="mb-3 text-sm font-medium text-gray-700">
-        {attendees.length} {attendees.length === 1 ? "person" : "people"} attending
+    <div className="min-w-0">
+      <p className="mb-3 text-sm font-medium text-foreground">
+        {attendees.length} {attendees.length === 1 ? "person" : "people"}{" "}
+        attending
       </p>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         {attendees.map((attendee) => (
           <div
             key={attendee.user_id}
-            className="flex items-center gap-2 rounded-full bg-gray-50 py-1 pl-1 pr-3"
+            className="flex max-w-full min-w-0 items-center gap-2 rounded-full bg-muted py-1 pr-3 pl-1"
           >
             {attendee.avatar_url ? (
               <Image
@@ -104,14 +110,16 @@ export function AttendeeList({ attendees }: AttendeeListProps) {
                 width={32}
                 height={32}
                 unoptimized
-                className="h-8 w-8 rounded-full object-cover"
+                className="size-8 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pti-green/20 text-xs font-medium text-pti-green">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pti-green/20 text-xs font-medium text-pti-green">
                 {attendee.display_name.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="text-sm text-gray-700">{attendee.display_name}</span>
+            <span className="max-w-[10rem] truncate text-sm text-foreground sm:max-w-[14rem]">
+              {attendee.display_name}
+            </span>
           </div>
         ))}
       </div>

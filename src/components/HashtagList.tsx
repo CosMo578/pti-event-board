@@ -6,7 +6,7 @@ export function HashtagList({ hashtags }: { hashtags: string[] }) {
       {hashtags.map((tag) => (
         <span
           key={tag}
-          className="rounded-full bg-pti-green/10 px-3 py-1 text-sm font-medium text-pti-green"
+          className="max-w-full truncate rounded-full bg-pti-green/10 px-3 py-1 text-sm font-medium text-pti-green"
         >
           #{tag}
         </span>

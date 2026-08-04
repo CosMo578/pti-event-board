@@ -84,8 +84,8 @@ export default async function EventDetailPage({ params }: EventPageProps) {
         </Link>
       </Button>
 
-      <article className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="relative aspect-[16/9] w-full bg-gray-100">
+      <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="relative aspect-[16/9] w-full bg-muted">
           {typedEvent.flyer_url ? (
             <Image
               src={typedEvent.flyer_url}
@@ -102,39 +102,37 @@ export default async function EventDetailPage({ params }: EventPageProps) {
           )}
         </div>
 
-        <div className="space-y-6 p-6 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}
-                >
-                  {categoryToLabel(typedEvent.category)}
+        <div className="space-y-6 p-4 sm:p-6 md:p-8">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`max-w-full truncate rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}`}
+              >
+                {categoryToLabel(typedEvent.category)}
+              </span>
+              {typedEvent.visibility === "private" && (
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  Unlisted event
                 </span>
-                {typedEvent.visibility === "private" && (
-                  <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                    Unlisted event
-                  </span>
-                )}
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                {typedEvent.title}
-              </h1>
+              )}
             </div>
+            <h1 className="text-2xl font-bold break-words text-foreground sm:text-3xl">
+              {typedEvent.title}
+            </h1>
           </div>
 
           <HashtagList hashtags={typedEvent.hashtags ?? []} />
 
-          <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <section className="min-w-0">
+            <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               About
             </h2>
-            <p className="mt-2 whitespace-pre-wrap text-gray-700">
+            <p className="mt-2 whitespace-pre-wrap break-words text-foreground/90">
               {typedEvent.description}
             </p>
           </section>
 
-          <section className="flex items-center gap-3">
+          <section className="flex min-w-0 items-center gap-3">
             {typedEvent.host_avatar_url ? (
               <Image
                 src={typedEvent.host_avatar_url}
@@ -142,55 +140,57 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                 width={40}
                 height={40}
                 unoptimized
-                className="h-10 w-10 rounded-full object-cover"
+                className="size-10 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pti-green/20 text-sm font-medium text-pti-green">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pti-green/20 text-sm font-medium text-pti-green">
                 {typedEvent.host_name.charAt(0).toUpperCase()}
               </div>
             )}
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="min-w-0">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Hosted by
               </p>
-              <p className="font-medium text-gray-900">{typedEvent.host_name}</p>
+              <p className="truncate font-medium text-foreground">
+                {typedEvent.host_name}
+              </p>
             </div>
           </section>
 
-          <section className="grid gap-3 rounded-lg bg-gray-50 p-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <section className="grid gap-3 rounded-lg bg-muted/60 p-4 sm:grid-cols-3">
+            <div className="min-w-0">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Date
               </p>
-              <p className="mt-1 text-sm font-medium text-gray-900">
+              <p className="mt-1 text-sm font-medium break-words text-foreground">
                 {formatDate(typedEvent.event_date)}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="min-w-0">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Time
               </p>
-              <p className="mt-1 text-sm font-medium text-gray-900">
+              <p className="mt-1 text-sm font-medium text-foreground">
                 {formatTime(typedEvent.event_time)}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="min-w-0">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Venue
               </p>
-              <p className="mt-1 text-sm font-medium text-gray-900">
+              <p className="mt-1 text-sm font-medium break-words text-foreground">
                 {typedEvent.location}
               </p>
             </div>
           </section>
 
-          <section className="flex flex-wrap gap-3">
+          <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
             <ShareButton title={typedEvent.title} url={shareUrl} />
             <AddToCalendar event={typedEvent} />
           </section>
 
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <section className="min-w-0">
+            <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Register
             </h2>
             <RsvpButton
@@ -200,8 +200,8 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             />
           </section>
 
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <section className="min-w-0">
+            <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Attendees
             </h2>
             <AttendeeList attendees={attendees} />
