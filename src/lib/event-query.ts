@@ -3,6 +3,24 @@ export function escapeIlike(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
+/** RFC 4122 UUID string (any version), case-insensitive. */
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+/**
+ * PostgREST/Postgres errors that mean an event id cannot resolve to a row.
+ * PGRST116 = .single() matched zero rows; 22P02 = invalid uuid syntax.
+ * Other codes (connection/auth/server) must remain hard failures.
+ */
+export function isEventLookupNotFoundError(
+  error: { code?: string } | null | undefined,
+): boolean {
+  return error?.code === "PGRST116" || error?.code === "22P02";
+}
+
 /** Normalize a search term into an optional hashtag slug (no leading #). */
 export function normalizeHashtagQuery(value: string): string | null {
   const trimmed = value.trim().replace(/^#+/, "").toLowerCase();

@@ -1,7 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EventForm } from "@/components/EventForm";
-import { isPastEvent } from "@/lib/event-query";
+import {
+  isEventLookupNotFoundError,
+  isPastEvent,
+  isUuid,
+} from "@/lib/event-query";
 import type { Event } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +16,11 @@ interface EditPageProps {
 
 export default async function EditEventPage({ params }: EditPageProps) {
   const { id } = await params;
+
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const supabase = await createClient();
 
   const {
@@ -28,9 +37,8 @@ export default async function EditEventPage({ params }: EditPageProps) {
     .eq("id", id)
     .single();
 
-  // PGRST116 = zero rows from .single(); treat as missing.
-  // Any other PostgREST/DB error must not be masked as 404/home redirect.
-  if (error && error.code !== "PGRST116") {
+  // Missing/invalid id → 404. Other PostgREST/DB errors must not be masked.
+  if (error && !isEventLookupNotFoundError(error)) {
     console.error("[edit] failed to load event", {
       id,
       code: error.code,

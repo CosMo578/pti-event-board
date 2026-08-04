@@ -11,7 +11,12 @@ import { AttendeeList, RsvpButton } from "@/components/RsvpButton";
 import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
-import { formatAttendingLabel, isPastEvent } from "@/lib/event-query";
+import {
+  formatAttendingLabel,
+  isEventLookupNotFoundError,
+  isPastEvent,
+  isUuid,
+} from "@/lib/event-query";
 import type { EventWithRsvps } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +47,11 @@ function formatTime(timeStr: string) {
 
 export default async function EventDetailPage({ params }: EventPageProps) {
   const { id } = await params;
+
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const supabase = await createClient();
 
   const {
@@ -54,7 +64,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     .eq("id", id)
     .single();
 
-  if (error && error.code !== "PGRST116") {
+  if (error && !isEventLookupNotFoundError(error)) {
     console.error("[event-detail] failed to load event", {
       id,
       code: error.code,
