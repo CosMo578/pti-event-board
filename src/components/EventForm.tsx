@@ -12,6 +12,11 @@ import {
   labelToCategory,
 } from "@/lib/constants";
 import { formatHashtagsForInput, parseHashtagsInput } from "@/lib/hashtags";
+import {
+  getEventStartPastError,
+  nowTimeMinuteString,
+  todayDateString,
+} from "@/lib/event-query";
 import { htmlToPlainText } from "@/lib/rich-text";
 import type { Event, EventVisibility } from "@/lib/types/database";
 import { Button } from "@/components/ui/button";
@@ -59,6 +64,17 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
   const [flyerRemoved, setFlyerRemoved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // UTC date/time floors — same convention as homepage filters (`todayDateString`).
+  const now = new Date();
+  const today = todayDateString(now);
+  const nowMinute = nowTimeMinuteString(now);
+  // Avoid HTML min invalidating an existing same-day start that has already passed.
+  const startTimeMin =
+    eventDate === today &&
+    !(mode === "edit" && eventTime !== "" && eventTime < nowMinute)
+      ? nowMinute
+      : undefined;
 
   const handleFlyerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -175,6 +191,32 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         return;
       }
 
+      const startPastError = getEventStartPastError(eventDate, eventTime);
+      if (startPastError) {
+        const unchangedStart =
+          mode === "edit" &&
+          event != null &&
+          eventDate === event.event_date &&
+          eventTime === (event.event_time?.slice(0, 5) ?? "");
+        if (!unchangedStart) {
+          setError(startPastError);
+          return;
+        }
+      }
+
+      if (hasEndDate && hasEndTime) {
+        const startMs = new Date(
+          `${eventDate}T${eventTime.length === 5 ? `${eventTime}:00` : eventTime}`,
+        ).getTime();
+        const endMs = new Date(
+          `${endDate}T${endTime.length === 5 ? `${endTime}:00` : endTime}`,
+        ).getTime();
+        if (!(endMs > startMs)) {
+          setError("End date/time must be after the start date/time.");
+          return;
+        }
+      }
+
       const payload = {
         title,
         description,
@@ -268,7 +310,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             disabled={loading}
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
-            min={mode === "create" ? new Date().toISOString().split("T")[0] : undefined}
+            min={today}
             className={fieldClassName}
           />
         </div>
@@ -282,6 +324,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             disabled={loading}
             value={eventTime}
             onChange={(e) => setEventTime(e.target.value)}
+            min={startTimeMin}
             className={fieldClassName}
           />
         </div>
@@ -296,7 +339,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             disabled={loading}
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            min={eventDate || undefined}
+            min={eventDate || today}
             className={fieldClassName}
           />
         </div>

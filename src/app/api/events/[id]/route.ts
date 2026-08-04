@@ -84,7 +84,12 @@ export async function PATCH(request: Request, context: RouteContext) {
         : existing.end_time,
   };
 
-  const scheduleError = validateEventSchedule(merged);
+  const scheduleError = validateEventSchedule(merged, {
+    allowUnchangedPastStart: {
+      event_date: existing.event_date,
+      event_time: existing.event_time,
+    },
+  });
   if (scheduleError) {
     return NextResponse.json({ error: scheduleError }, { status: 400 });
   }

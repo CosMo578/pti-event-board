@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EVENT_CATEGORY_VALUES } from "@/lib/constants";
+import { getEventStartPastError } from "@/lib/event-query";
 import { htmlToPlainText } from "@/lib/rich-text";
 import { sanitizeDescriptionHtml } from "@/lib/sanitize-description";
 
@@ -76,6 +77,24 @@ const eventFieldsBase = {
   end_time: endTimeSchema,
 };
 
+function refineStartNotInPast(
+  data: { event_date?: string; event_time?: string },
+  ctx: z.RefinementCtx,
+) {
+  if (!data.event_date || !data.event_time) return;
+
+  const startError = getEventStartPastError(data.event_date, data.event_time);
+  if (startError) {
+    const path =
+      startError.includes("time") ? (["event_time"] as const) : (["event_date"] as const);
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: startError,
+      path: [...path],
+    });
+  }
+}
+
 function refineEndDateTime(
   data: {
     event_date?: string;
@@ -124,7 +143,10 @@ export const createEventSchema = z
     end_date: endDateSchema.optional().default(null),
     end_time: endTimeSchema.optional().default(null),
   })
-  .superRefine(refineEndDateTime);
+  .superRefine((data, ctx) => {
+    refineStartNotInPast(data, ctx);
+    refineEndDateTime(data, ctx);
+  });
 
 /** Partial update — omitted capacity/end fields are left unchanged by the API. */
 export const updateEventSchema = z
@@ -145,13 +167,29 @@ export const updateEventSchema = z
     }
   });
 
-/** Validate merged event fields after PATCH (start + end consistency). */
-export function validateEventSchedule(fields: {
-  event_date: string;
-  event_time: string;
-  end_date: string | null;
-  end_time: string | null;
-}): string | null {
+/** Validate merged event fields after PATCH (start not past + end consistency). */
+export function validateEventSchedule(
+  fields: {
+    event_date: string;
+    event_time: string;
+    end_date: string | null;
+    end_time: string | null;
+  },
+  options?: {
+    /** When set, an unchanged start may remain in the past (same-day in-progress edits). */
+    allowUnchangedPastStart?: { event_date: string; event_time: string };
+  },
+): string | null {
+  const startError = getEventStartPastError(fields.event_date, fields.event_time);
+  if (startError) {
+    const prior = options?.allowUnchangedPastStart;
+    const unchanged =
+      prior != null &&
+      fields.event_date === prior.event_date &&
+      fields.event_time.slice(0, 5) === prior.event_time.slice(0, 5);
+    if (!unchanged) return startError;
+  }
+
   const hasEndDate = fields.end_date != null;
   const hasEndTime = fields.end_time != null;
 

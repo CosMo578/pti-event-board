@@ -20,6 +20,46 @@ export function nowTimeString(now = new Date()): string {
   return now.toISOString().slice(11, 19);
 }
 
+/** Current UTC time as HH:MM for minute-granularity form/API checks. */
+export function nowTimeMinuteString(now = new Date()): string {
+  return now.toISOString().slice(11, 16);
+}
+
+/**
+ * Whether an event start is in the past.
+ *
+ * Uses UTC calendar date + UTC clock time (minute precision), matching
+ * `todayDateString` / `nowTimeString` used by homepage and dashboard filters.
+ * Stored `event_date` / `event_time` are compared as those UTC strings — not
+ * reinterpreted in the browser's local timezone.
+ */
+export function isEventStartInPast(
+  eventDate: string,
+  eventTime: string,
+  now = new Date(),
+): boolean {
+  return getEventStartPastError(eventDate, eventTime, now) !== null;
+}
+
+/** User-facing error if start date/time is before "now" (UTC, minute precision). */
+export function getEventStartPastError(
+  eventDate: string,
+  eventTime: string,
+  now = new Date(),
+): string | null {
+  const today = todayDateString(now);
+  if (eventDate < today) {
+    return "Event date cannot be in the past";
+  }
+  if (eventDate === today) {
+    const time = eventTime.slice(0, 5);
+    if (time < nowTimeMinuteString(now)) {
+      return "Event time must be now or later when the date is today";
+    }
+  }
+  return null;
+}
+
 function padTime(timeStr: string): string {
   return timeStr.length === 5 ? `${timeStr}:00` : timeStr;
 }
