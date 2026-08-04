@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isPastEvent } from "@/lib/event-query";
 import { getGoogleAvatarUrl, getGoogleDisplayName } from "@/lib/google-user";
 
 interface RouteContext {
@@ -20,12 +21,19 @@ export async function POST(_request: Request, context: RouteContext) {
 
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id")
+    .select("id, event_date")
     .eq("id", eventId)
     .single();
 
   if (eventError || !event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  if (isPastEvent(event.event_date)) {
+    return NextResponse.json(
+      { error: "Cannot RSVP to a past event." },
+      { status: 403 },
+    );
   }
 
   const { data, error } = await supabase
@@ -59,6 +67,23 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("id, event_date")
+    .eq("id", eventId)
+    .single();
+
+  if (eventError || !event) {
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  if (isPastEvent(event.event_date)) {
+    return NextResponse.json(
+      { error: "Cannot change RSVP for a past event." },
+      { status: 403 },
+    );
   }
 
   const { error } = await supabase

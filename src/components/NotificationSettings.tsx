@@ -25,6 +25,35 @@ interface Preferences {
   push_enabled: boolean;
 }
 
+const BLOCKED_PERMISSION_HELP =
+  "Notifications are blocked for this site. Click the lock or info icon in your browser’s address bar, set Notifications to Allow, then turn this switch on again.";
+
+async function ensureNotificationPermission(): Promise<"granted" | "denied" | "default" | "unsupported"> {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    return "unsupported";
+  }
+
+  // Always re-read current permission so a user who reset site settings
+  // (denied → Ask) can be prompted again without reloading.
+  let permission = Notification.permission;
+
+  if (permission === "granted") {
+    return "granted";
+  }
+
+  if (permission === "denied") {
+    // Browsers will not show the prompt again while permission is denied.
+    // Calling requestPermission() still returns "denied" immediately, but we
+    // try once in case the engine refreshed state after settings changes.
+    permission = await Notification.requestPermission();
+    return permission;
+  }
+
+  // permission === "default" — show the browser prompt.
+  permission = await Notification.requestPermission();
+  return permission;
+}
+
 export function NotificationSettings({ open, onClose }: NotificationSettingsProps) {
   const [prefs, setPrefs] = useState<Preferences | null>(null);
   const [saving, setSaving] = useState(false);
@@ -67,12 +96,24 @@ export function NotificationSettings({ open, onClose }: NotificationSettingsProp
 
     try {
       if (value) {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          setError("Notification permission was denied.");
+        const permission = await ensureNotificationPermission();
+
+        if (permission === "unsupported") {
+          setError("Notifications are not supported in this browser.");
           setSaving(false);
           return;
         }
+
+        if (permission !== "granted") {
+          setError(
+            permission === "denied"
+              ? BLOCKED_PERMISSION_HELP
+              : "Notification permission was not granted. Try again, or allow notifications when your browser asks.",
+          );
+          setSaving(false);
+          return;
+        }
+
         await registerPushSubscription();
       } else {
         await unregisterPushSubscription();
@@ -134,7 +175,9 @@ export function NotificationSettings({ open, onClose }: NotificationSettingsProp
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Requires HTTPS in production. You can change this anytime.
+              Requires HTTPS in production. You can change this anytime. If you
+              previously blocked notifications, allow them in your browser site
+              settings, then toggle this on again.
             </p>
           </div>
         )}

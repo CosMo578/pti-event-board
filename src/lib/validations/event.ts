@@ -1,9 +1,25 @@
 import { z } from "zod";
 import { EVENT_CATEGORY_VALUES } from "@/lib/constants";
+import { htmlToPlainText } from "@/lib/rich-text";
+import { sanitizeDescriptionHtml } from "@/lib/sanitize-description";
+
+const DESCRIPTION_MIN_PLAIN = 10;
+const DESCRIPTION_MAX_HTML = 5000;
+
+export const descriptionSchema = z
+  .string()
+  .max(DESCRIPTION_MAX_HTML, "Description is too long")
+  .transform((value) => sanitizeDescriptionHtml(value))
+  .refine(
+    (html) => htmlToPlainText(html).length >= DESCRIPTION_MIN_PLAIN,
+    {
+      message: `Description must be at least ${DESCRIPTION_MIN_PLAIN} characters`,
+    },
+  );
 
 const eventFields = {
   title: z.string().min(3).max(200),
-  description: z.string().min(10).max(5000),
+  description: descriptionSchema,
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   event_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/),
   location: z.string().min(2).max(300),

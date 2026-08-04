@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EventForm } from "@/components/EventForm";
+import { isPastEvent } from "@/lib/event-query";
 import type { Event } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,10 @@ export default async function EditEventPage({ params }: EditPageProps) {
   }
 
   if (event.created_by !== user.id) {
+    redirect(`/events/${id}`);
+  }
+
+  if (isPastEvent(event.event_date)) {
     redirect(`/events/${id}`);
   }
 

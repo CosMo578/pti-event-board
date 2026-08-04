@@ -1,3 +1,4 @@
+import { htmlToPlainText } from "@/lib/rich-text";
 import type { Event } from "@/lib/types/database";
 
 function padTime(timeStr: string): string {
@@ -31,7 +32,7 @@ export function buildGoogleCalendarUrl(event: Event): string {
     action: "TEMPLATE",
     text: event.title,
     dates: `${fmt(startDate)}/${fmt(endDate)}`,
-    details: event.description,
+    details: htmlToPlainText(event.description),
     location: event.location,
   });
 
@@ -58,7 +59,7 @@ export function buildIcsContent(event: Event): string {
     `DTSTART:${toUtcIcsDate(event.event_date, event.event_time).split("/")[0]}`,
     `DTEND:${toUtcIcsDate(event.event_date, event.event_time).split("/")[1]}`,
     `SUMMARY:${escape(event.title)}`,
-    `DESCRIPTION:${escape(event.description)}`,
+    `DESCRIPTION:${escape(htmlToPlainText(event.description))}`,
     `LOCATION:${escape(event.location)}`,
     "END:VEVENT",
     "END:VCALENDAR",

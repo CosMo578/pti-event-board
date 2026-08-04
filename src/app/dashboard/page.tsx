@@ -5,6 +5,7 @@ import {
   type DashboardEvent,
 } from "@/components/DashboardEventList";
 import { Button } from "@/components/ui/button";
+import { todayDateString } from "@/lib/event-query";
 import type { Event, EventRsvp } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -40,8 +41,9 @@ export default async function DashboardPage() {
     };
   });
 
+  const today = todayDateString();
   const upcomingCount = dashboardEvents.filter(
-    (e) => e.event_date >= new Date().toISOString().split("T")[0],
+    (e) => e.event_date >= today,
   ).length;
   const totalRsvps = dashboardEvents.reduce((sum, e) => sum + e.rsvp_count, 0);
 

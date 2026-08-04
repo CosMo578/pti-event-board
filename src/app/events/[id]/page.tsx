@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AddToCalendar } from "@/components/AddToCalendar";
 import { EventOwnerActions } from "@/components/EventOwnerActions";
 import { HashtagList } from "@/components/HashtagList";
+import { RichTextContent } from "@/components/RichTextContent";
 import { AttendeeList, RsvpButton } from "@/components/RsvpButton";
 import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
+import { isPastEvent } from "@/lib/event-query";
 import type { EventWithRsvps } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +61,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
   const typedEvent = event as EventWithRsvps;
   const attendees = typedEvent.event_rsvps ?? [];
   const isOwner = user?.id === typedEvent.created_by;
+  const past = isPastEvent(typedEvent.event_date);
   const hasRsvp = user
     ? attendees.some((a) => a.user_id === user.id)
     : false;
@@ -72,20 +75,22 @@ export default async function EventDetailPage({ params }: EventPageProps) {
   const shareUrl = `${siteUrl}/events/${typedEvent.id}`;
 
   return (
-    <div className="mx-auto max-w-3xl flex-1 px-4 py-8 sm:px-6">
-      <Button
-        asChild
-        variant="ghost"
-        className="mb-6 -ml-2 h-9 gap-1.5 px-2 text-pti-green hover:bg-pti-green/10 hover:text-pti-green"
-      >
-        <Link href="/">
-          <ArrowLeft className="size-4" />
-          Back to events
-        </Link>
-      </Button>
+    <div className="w-full flex-1 sm:mx-auto sm:max-w-4xl sm:px-6 sm:py-8">
+      <div className="px-4 pt-4 sm:px-0 sm:pt-0">
+        <Button
+          asChild
+          variant="ghost"
+          className="mb-4 -ml-2 h-9 gap-1.5 px-2 text-pti-green hover:bg-pti-green/10 hover:text-pti-green sm:mb-6"
+        >
+          <Link href="/">
+            <ArrowLeft className="size-4" />
+            Back to events
+          </Link>
+        </Button>
+      </div>
 
-      <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-        <div className="relative aspect-[16/9] w-full bg-muted">
+      <article className="overflow-hidden border-y border-border bg-card shadow-sm sm:rounded-xl sm:border">
+        <div className="relative aspect-[16/9] w-full bg-muted sm:aspect-[2/1]">
           {typedEvent.flyer_url ? (
             <Image
               src={typedEvent.flyer_url}
@@ -93,7 +98,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
               fill
               className="object-cover"
               priority
-              sizes="(max-width: 768px) 100vw, 768px"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 896px"
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-pti-green/10 to-pti-gold/20">
@@ -115,6 +120,11 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                   Unlisted event
                 </span>
               )}
+              {past && (
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  Past event
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-bold break-words text-foreground sm:text-3xl">
               {typedEvent.title}
@@ -127,9 +137,10 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               About
             </h2>
-            <p className="mt-2 whitespace-pre-wrap break-words text-foreground/90">
-              {typedEvent.description}
-            </p>
+            <RichTextContent
+              content={typedEvent.description}
+              className="mt-2"
+            />
           </section>
 
           <section className="flex min-w-0 items-center gap-3">
@@ -157,57 +168,63 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             </div>
           </section>
 
-          <section className="grid gap-3 rounded-lg bg-muted/60 p-4 sm:grid-cols-3">
-            <div className="min-w-0">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Date
-              </p>
-              <p className="mt-1 text-sm font-medium break-words text-foreground">
+          <section className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+            <p className="inline-flex max-w-full items-center gap-1.5">
+              <CalendarDays
+                className="size-3.5 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="sr-only">Date:</span>
+              <span className="break-words text-foreground">
                 {formatDate(typedEvent.event_date)}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Time
-              </p>
-              <p className="mt-1 text-sm font-medium text-foreground">
+              </span>
+            </p>
+            <p className="inline-flex max-w-full items-center gap-1.5">
+              <Clock className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="sr-only">Time:</span>
+              <span className="text-foreground">
                 {formatTime(typedEvent.event_time)}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Venue
-              </p>
-              <p className="mt-1 text-sm font-medium break-words text-foreground">
+              </span>
+            </p>
+            <p className="inline-flex max-w-full items-center gap-1.5">
+              <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="sr-only">Location:</span>
+              <span className="break-words text-foreground">
                 {typedEvent.location}
-              </p>
-            </div>
+              </span>
+            </p>
           </section>
 
-          <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-            <ShareButton title={typedEvent.title} url={shareUrl} />
-            <AddToCalendar event={typedEvent} />
-          </section>
+          {!past && (
+            <>
+              <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+                <ShareButton title={typedEvent.title} url={shareUrl} />
+                <AddToCalendar event={typedEvent} />
+              </section>
 
-          <section className="min-w-0">
-            <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-              Register
-            </h2>
-            <RsvpButton
-              eventId={typedEvent.id}
-              isAuthenticated={!!user}
-              hasRsvp={hasRsvp}
-            />
-          </section>
+              <section className="min-w-0">
+                <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                  Register
+                </h2>
+                <RsvpButton
+                  eventId={typedEvent.id}
+                  isAuthenticated={!!user}
+                  hasRsvp={hasRsvp}
+                />
+              </section>
+            </>
+          )}
 
           <section className="min-w-0">
             <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Attendees
             </h2>
-            <AttendeeList attendees={attendees} />
+            <AttendeeList attendees={attendees} isPast={past} />
           </section>
 
-          {isOwner && <EventOwnerActions eventId={typedEvent.id} />}
+          {isOwner && (
+            <EventOwnerActions eventId={typedEvent.id} isPast={past} />
+          )}
         </div>
       </article>
     </div>

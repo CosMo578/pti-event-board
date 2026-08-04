@@ -9,3 +9,13 @@ export function normalizeHashtagQuery(value: string): string | null {
   if (!trimmed || !/^[a-z0-9_-]+$/i.test(trimmed)) return null;
   return trimmed;
 }
+
+/** Today's date as YYYY-MM-DD (UTC), matching homepage/dashboard filtering. */
+export function todayDateString(now = new Date()): string {
+  return now.toISOString().split("T")[0];
+}
+
+/** Past when event_date is strictly before today (date-only, consistent app-wide). */
+export function isPastEvent(eventDate: string, now = new Date()): boolean {
+  return eventDate < todayDateString(now);
+}

@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   ALLOWED_FLYER_TYPES,
@@ -12,10 +13,12 @@ import {
   labelToCategory,
 } from "@/lib/constants";
 import { formatHashtagsForInput, parseHashtagsInput } from "@/lib/hashtags";
+import { htmlToPlainText } from "@/lib/rich-text";
 import type { Event, EventVisibility } from "@/lib/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 interface EventFormProps {
   mode?: "create" | "edit";
@@ -28,6 +31,7 @@ const fieldClassName =
 export function EventForm({ mode = "create", event }: EventFormProps) {
   const router = useRouter();
   const supabase = createClient();
+  const flyerInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(event?.title ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
@@ -49,6 +53,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
   const [flyerPreview, setFlyerPreview] = useState<string | null>(
     event?.flyer_url ?? null,
   );
+  const [flyerRemoved, setFlyerRemoved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -62,17 +67,36 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
       )
     ) {
       setError("Only JPG, PNG, and WEBP images are allowed.");
+      e.target.value = "";
       return;
     }
 
     if (file.size > MAX_FLYER_SIZE) {
       setError("Image must be 5MB or smaller.");
+      e.target.value = "";
       return;
+    }
+
+    if (flyerPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(flyerPreview);
     }
 
     setError("");
     setFlyer(file);
+    setFlyerRemoved(false);
     setFlyerPreview(URL.createObjectURL(file));
+  };
+
+  const clearFlyer = () => {
+    if (flyerPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(flyerPreview);
+    }
+    setFlyer(null);
+    setFlyerPreview(null);
+    setFlyerRemoved(true);
+    if (flyerInputRef.current) {
+      flyerInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,6 +105,18 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
     setError("");
 
     try {
+      const plainDescription = htmlToPlainText(description);
+      if (plainDescription.length < 10) {
+        setError("Description must be at least 10 characters.");
+        setLoading(false);
+        return;
+      }
+      if (description.length > 5000) {
+        setError("Description is too long. Try shortening the text or formatting.");
+        setLoading(false);
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -91,7 +127,9 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         return;
       }
 
-      let flyerUrl: string | null = event?.flyer_url ?? null;
+      let flyerUrl: string | null = flyerRemoved
+        ? null
+        : (event?.flyer_url ?? null);
 
       if (flyer) {
         const ext = flyer.name.split(".").pop() ?? "jpg";
@@ -167,6 +205,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
           id="title"
           type="text"
           required
+          disabled={loading}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={fieldClassName}
@@ -176,14 +215,12 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
 
       <div className="min-w-0">
         <Label htmlFor="description">Description</Label>
-        <textarea
+        <RichTextEditor
           id="description"
-          required
-          rows={4}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="mt-1.5 w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          onChange={setDescription}
           placeholder="Describe the event..."
+          disabled={loading}
         />
       </div>
 
@@ -194,6 +231,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             id="eventDate"
             type="date"
             required
+            disabled={loading}
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
             min={mode === "create" ? new Date().toISOString().split("T")[0] : undefined}
@@ -207,6 +245,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             id="eventTime"
             type="time"
             required
+            disabled={loading}
             value={eventTime}
             onChange={(e) => setEventTime(e.target.value)}
             className={fieldClassName}
@@ -220,6 +259,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
           id="location"
           type="text"
           required
+          disabled={loading}
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           className={fieldClassName}
@@ -232,6 +272,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         <select
           id="category"
           required
+          disabled={loading}
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className={fieldClassName}
@@ -250,6 +291,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         <Input
           id="hashtags"
           type="text"
+          disabled={loading}
           value={hashtagsInput}
           onChange={(e) => setHashtagsInput(e.target.value)}
           className={fieldClassName}
@@ -269,6 +311,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
               name="visibility"
               value="public"
               checked={visibility === "public"}
+              disabled={loading}
               onChange={() => setVisibility("public")}
             />
             Public
@@ -279,6 +322,7 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
               name="visibility"
               value="private"
               checked={visibility === "private"}
+              disabled={loading}
               onChange={() => setVisibility("private")}
             />
             Private (unlisted)
@@ -295,21 +339,36 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
           JPG, PNG, or WEBP — max 5MB
         </p>
         <Input
+          ref={flyerInputRef}
           id="flyer"
           type="file"
           accept="image/jpeg,image/png,image/webp"
+          disabled={loading}
           onChange={handleFlyerChange}
           className="mt-2 h-auto w-full min-w-0 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-pti-green/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-pti-green hover:file:bg-pti-green/20"
         />
         {flyerPreview && (
-          <Image
-            src={flyerPreview}
-            alt="Flyer preview"
-            width={400}
-            height={300}
-            unoptimized
-            className="mt-3 max-h-48 w-full max-w-full rounded-lg border border-border object-contain"
-          />
+          <div className="relative mt-3 max-w-full">
+            <Image
+              src={flyerPreview}
+              alt="Flyer preview"
+              width={400}
+              height={300}
+              unoptimized
+              className="max-h-48 w-full max-w-full rounded-lg border border-border object-contain"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={loading}
+              onClick={clearFlyer}
+              className="absolute top-2 right-2 gap-1 shadow-sm"
+            >
+              <X className="size-3.5" />
+              Remove
+            </Button>
+          </div>
         )}
       </div>
 

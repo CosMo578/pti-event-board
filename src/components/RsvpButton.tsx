@@ -1,9 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 interface RsvpButtonProps {
   eventId: string;
@@ -78,51 +84,53 @@ export function RsvpButton({
   );
 }
 
+const MAX_VISIBLE_ATTENDEES = 5;
+
 interface AttendeeListProps {
   attendees: { display_name: string; avatar_url: string | null; user_id: string }[];
+  isPast?: boolean;
 }
 
-export function AttendeeList({ attendees }: AttendeeListProps) {
+export function AttendeeList({ attendees, isPast = false }: AttendeeListProps) {
   if (attendees.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No one has RSVP&apos;d yet. Be the first!
+        {isPast ? (
+          <>No one RSVP&apos;d to this event.</>
+        ) : (
+          <>No one has RSVP&apos;d yet. Be the first!</>
+        )}
       </p>
     );
   }
 
+  const visible = attendees.slice(0, MAX_VISIBLE_ATTENDEES);
+  const overflow = attendees.length - visible.length;
+
   return (
-    <div className="min-w-0">
-      <p className="mb-3 text-sm font-medium text-foreground">
+    <div className="min-w-0 space-y-3">
+      <p className="text-sm font-medium text-foreground">
         {attendees.length} {attendees.length === 1 ? "person" : "people"}{" "}
         attending
       </p>
-      <div className="flex flex-wrap gap-2 sm:gap-3">
-        {attendees.map((attendee) => (
-          <div
-            key={attendee.user_id}
-            className="flex max-w-full min-w-0 items-center gap-2 rounded-full bg-muted py-1 pr-3 pl-1"
-          >
+      <AvatarGroup>
+        {visible.map((attendee) => (
+          <Avatar key={attendee.user_id} size="lg">
             {attendee.avatar_url ? (
-              <Image
+              <AvatarImage
                 src={attendee.avatar_url}
-                alt={attendee.display_name}
-                width={32}
-                height={32}
-                unoptimized
-                className="size-8 shrink-0 rounded-full object-cover"
+                alt=""
               />
-            ) : (
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pti-green/20 text-xs font-medium text-pti-green">
-                {attendee.display_name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="max-w-[10rem] truncate text-sm text-foreground sm:max-w-[14rem]">
-              {attendee.display_name}
-            </span>
-          </div>
+            ) : null}
+            <AvatarFallback className="bg-pti-green/20 text-pti-green">
+              {attendee.display_name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
         ))}
-      </div>
+        {overflow > 0 ? (
+          <AvatarGroupCount>+{overflow}</AvatarGroupCount>
+        ) : null}
+      </AvatarGroup>
     </div>
   );
 }

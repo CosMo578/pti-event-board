@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
+import { htmlToPlainText } from "@/lib/rich-text";
 import type { EventWithRsvpCount } from "@/lib/types/database";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,7 +67,7 @@ export function EventCard({ event }: { event: EventWithRsvpCount }) {
             {event.title}
           </CardTitle>
           <CardDescription className="line-clamp-2 min-h-[2.5rem]">
-            {event.description}
+            {htmlToPlainText(event.description)}
           </CardDescription>
         </CardHeader>
 

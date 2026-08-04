@@ -5,7 +5,11 @@ import { EventFilters } from "@/components/EventFilters";
 import { EventViewToggle } from "@/components/EventViewToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { labelToCategory } from "@/lib/constants";
-import { escapeIlike, normalizeHashtagQuery } from "@/lib/event-query";
+import {
+  escapeIlike,
+  normalizeHashtagQuery,
+  todayDateString,
+} from "@/lib/event-query";
 import type { Event, EventWithRsvpCount } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +32,7 @@ export default async function Home({ searchParams }: HomeProps) {
   } = await supabase.auth.getUser();
 
   const showPast = !!user;
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayDateString();
   const isPast = showPast && params.view === "past";
 
   let query = supabase

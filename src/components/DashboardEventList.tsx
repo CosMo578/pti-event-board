@@ -13,6 +13,8 @@ import {
   Users,
 } from "lucide-react";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
+import { isPastEvent } from "@/lib/event-query";
+import { htmlToPlainText } from "@/lib/rich-text";
 import type { Event, EventRsvp } from "@/lib/types/database";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,11 +49,6 @@ function formatDate(dateStr: string) {
   });
 }
 
-function isPastEvent(eventDate: string) {
-  const today = new Date().toISOString().split("T")[0];
-  return eventDate < today;
-}
-
 export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -60,7 +57,9 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
     null,
   );
 
-  const handleDelete = async (eventId: string) => {
+  const handleDelete = async (eventId: string, past: boolean) => {
+    if (past) return;
+
     if (
       !window.confirm(
         "Are you sure you want to delete this event? This cannot be undone.",
@@ -141,7 +140,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                   </Link>
                 </CardTitle>
                 <CardDescription className="line-clamp-2 min-h-[2.5rem]">
-                  {event.description}
+                  {htmlToPlainText(event.description)}
                 </CardDescription>
               </CardHeader>
 
@@ -169,12 +168,26 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                     View
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="sm" className="w-full">
-                  <Link href={`/events/${event.id}/edit`}>
+                {past ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled
+                    title="Past events cannot be edited"
+                  >
                     <Pencil className="size-3.5" />
                     Edit
-                  </Link>
-                </Button>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href={`/events/${event.id}/edit`}>
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -188,8 +201,9 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                   variant="outline"
                   size="sm"
                   className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={deletingId === event.id}
-                  onClick={() => handleDelete(event.id)}
+                  disabled={past || deletingId === event.id}
+                  title={past ? "Past events cannot be deleted" : undefined}
+                  onClick={() => handleDelete(event.id, past)}
                 >
                   <Trash2 className="size-3.5" />
                   {deletingId === event.id ? "Deleting…" : "Delete"}
