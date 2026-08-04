@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -29,7 +28,6 @@ const fieldClassName =
   "mt-1.5 h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function EventForm({ mode = "create", event }: EventFormProps) {
-  const router = useRouter();
   const supabase = createClient();
   const flyerInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,12 +106,10 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
       const plainDescription = htmlToPlainText(description);
       if (plainDescription.length < 10) {
         setError("Description must be at least 10 characters.");
-        setLoading(false);
         return;
       }
       if (description.length > 5000) {
         setError("Description is too long. Try shortening the text or formatting.");
-        setLoading(false);
         return;
       }
 
@@ -123,7 +119,6 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
 
       if (!user) {
         setError("You must be signed in to create an event.");
-        setLoading(false);
         return;
       }
 
@@ -141,7 +136,6 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
 
         if (uploadError) {
           setError("Failed to upload flyer. Please try again.");
-          setLoading(false);
           return;
         }
 
@@ -155,7 +149,6 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
       const categoryValue = labelToCategory(category);
       if (!categoryValue) {
         setError("Please select a valid category.");
-        setLoading(false);
         return;
       }
 
@@ -181,18 +174,33 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      let data: { error?: string; id?: string } = {};
+      try {
+        data = (await res.json()) as { error?: string; id?: string };
+      } catch {
+        if (!res.ok) {
+          setError("Failed to save event.");
+          return;
+        }
+      }
 
       if (!res.ok) {
         setError(data.error ?? "Failed to save event.");
-        setLoading(false);
         return;
       }
 
-      router.push(`/events/${data.id ?? event?.id}`);
-      router.refresh();
+      const nextId = data.id ?? event?.id;
+      if (!nextId) {
+        setError("Saved, but could not navigate to the event.");
+        return;
+      }
+
+      // Hard navigation avoids a soft RSC fetch that can hang the button
+      // if the destination page fails to render.
+      window.location.assign(`/events/${nextId}`);
     } catch {
       setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
