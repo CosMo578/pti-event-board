@@ -35,6 +35,9 @@ export interface Database {
           host_name: string;
           host_avatar_url: string | null;
           updated_at: string;
+          max_attendees: number | null;
+          end_date: string | null;
+          end_time: string | null;
         };
         Insert: {
           id?: string;
@@ -52,6 +55,9 @@ export interface Database {
           host_name?: string;
           host_avatar_url?: string | null;
           updated_at?: string;
+          max_attendees?: number | null;
+          end_date?: string | null;
+          end_time?: string | null;
         };
         Update: {
           id?: string;
@@ -69,6 +75,9 @@ export interface Database {
           host_name?: string;
           host_avatar_url?: string | null;
           updated_at?: string;
+          max_attendees?: number | null;
+          end_date?: string | null;
+          end_time?: string | null;
         };
         Relationships: [];
       };

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
+import { formatAttendingLabel } from "@/lib/event-query";
 import { htmlToPlainText } from "@/lib/rich-text";
 import type { EventWithRsvpCount } from "@/lib/types/database";
 import { Badge } from "@/components/ui/badge";
@@ -34,8 +35,36 @@ function formatTime(timeStr: string) {
   });
 }
 
+function formatSchedule(event: EventWithRsvpCount) {
+  const startDate = formatDate(event.event_date);
+  const startTime = formatTime(event.event_time);
+
+  if (event.end_date && event.end_time) {
+    const endDate = formatDate(event.end_date);
+    const endTime = formatTime(event.end_time);
+    if (event.end_date === event.event_date) {
+      return {
+        dateLabel: startDate,
+        timeLabel: `${startTime} – ${endTime}`,
+      };
+    }
+    return {
+      dateLabel: `${startDate} – ${endDate}`,
+      timeLabel: `${startTime} – ${endTime}`,
+    };
+  }
+
+  return { dateLabel: startDate, timeLabel: startTime };
+}
+
 export function EventCard({ event }: { event: EventWithRsvpCount }) {
   const badgeClass = CATEGORY_COLORS[event.category];
+  const schedule = formatSchedule(event);
+  const attendingLabel = formatAttendingLabel(
+    event.rsvp_count,
+    event.max_attendees,
+  );
+  const showAttending = event.rsvp_count > 0 || event.max_attendees != null;
 
   return (
     <Link
@@ -93,12 +122,12 @@ export function EventCard({ event }: { event: EventWithRsvpCount }) {
               aria-hidden="true"
             />
             <span className="sr-only">Date:</span>
-            <span className="truncate">{formatDate(event.event_date)}</span>
+            <span className="truncate">{schedule.dateLabel}</span>
           </p>
           <p className="inline-flex max-w-full items-center gap-1.5">
             <Clock className="size-3.5 shrink-0" aria-hidden="true" />
             <span className="sr-only">Time:</span>
-            <span className="truncate">{formatTime(event.event_time)}</span>
+            <span className="truncate">{schedule.timeLabel}</span>
           </p>
           <p className="inline-flex h-5 max-w-full items-center gap-1.5">
             <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
@@ -106,13 +135,13 @@ export function EventCard({ event }: { event: EventWithRsvpCount }) {
             <span className="truncate">{event.location}</span>
           </p>
           <p
-            className={`flex h-5 items-center gap-1.5 font-medium text-pti-green ${
-              event.rsvp_count > 0 ? "" : "invisible"
+            className={`flex h-5 max-w-full items-center gap-1.5 font-medium text-pti-green ${
+              showAttending ? "" : "invisible"
             }`}
-            aria-hidden={event.rsvp_count > 0 ? undefined : true}
+            aria-hidden={showAttending ? undefined : true}
           >
             <Users className="size-3.5 shrink-0" aria-hidden="true" />
-            {event.rsvp_count} attending
+            <span className="truncate">{attendingLabel}</span>
           </p>
         </CardFooter>
       </Card>

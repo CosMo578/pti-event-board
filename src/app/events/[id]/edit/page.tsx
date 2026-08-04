@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EventForm } from "@/components/EventForm";
 import { isPastEvent } from "@/lib/event-query";
@@ -28,15 +28,27 @@ export default async function EditEventPage({ params }: EditPageProps) {
     .eq("id", id)
     .single();
 
-  if (error || !event) {
-    redirect("/");
+  // PGRST116 = zero rows from .single(); treat as missing.
+  // Any other PostgREST/DB error must not be masked as 404/home redirect.
+  if (error && error.code !== "PGRST116") {
+    console.error("[edit] failed to load event", {
+      id,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    throw new Error(`Failed to load event for editing: ${error.message}`);
+  }
+
+  if (!event) {
+    notFound();
   }
 
   if (event.created_by !== user.id) {
     redirect(`/events/${id}`);
   }
 
-  if (isPastEvent(event.event_date)) {
+  if (isPastEvent(event)) {
     redirect(`/events/${id}`);
   }
 

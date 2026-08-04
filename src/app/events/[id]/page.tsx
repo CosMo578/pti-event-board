@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock, MapPin } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AddToCalendar } from "@/components/AddToCalendar";
 import { EventOwnerActions } from "@/components/EventOwnerActions";
@@ -11,7 +11,7 @@ import { AttendeeList, RsvpButton } from "@/components/RsvpButton";
 import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
-import { isPastEvent } from "@/lib/event-query";
+import { formatAttendingLabel, isPastEvent } from "@/lib/event-query";
 import type { EventWithRsvps } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -54,18 +54,33 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     .eq("id", id)
     .single();
 
-  if (error || !event) {
+  if (error && error.code !== "PGRST116") {
+    console.error("[event-detail] failed to load event", {
+      id,
+      code: error.code,
+      message: error.message,
+    });
+    throw new Error(`Failed to load event: ${error.message}`);
+  }
+
+  if (!event) {
     notFound();
   }
 
   const typedEvent = event as EventWithRsvps;
   const attendees = typedEvent.event_rsvps ?? [];
   const isOwner = user?.id === typedEvent.created_by;
-  const past = isPastEvent(typedEvent.event_date);
+  const past = isPastEvent(typedEvent);
   const hasRsvp = user
     ? attendees.some((a) => a.user_id === user.id)
     : false;
+  const isFull =
+    typedEvent.max_attendees != null &&
+    attendees.length >= typedEvent.max_attendees;
   const badgeClass = CATEGORY_COLORS[typedEvent.category];
+
+  const hasEnd = !!(typedEvent.end_date && typedEvent.end_time);
+  const sameDayEnd = hasEnd && typedEvent.end_date === typedEvent.event_date;
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
@@ -125,6 +140,11 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                   Past event
                 </span>
               )}
+              {!past && isFull && (
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  Full
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-bold break-words text-foreground sm:text-3xl">
               {typedEvent.title}
@@ -176,14 +196,18 @@ export default async function EventDetailPage({ params }: EventPageProps) {
               />
               <span className="sr-only">Date:</span>
               <span className="break-words text-foreground">
-                {formatDate(typedEvent.event_date)}
+                {hasEnd && !sameDayEnd
+                  ? `${formatDate(typedEvent.event_date)} – ${formatDate(typedEvent.end_date!)}`
+                  : formatDate(typedEvent.event_date)}
               </span>
             </p>
             <p className="inline-flex max-w-full items-center gap-1.5">
               <Clock className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="sr-only">Time:</span>
               <span className="text-foreground">
-                {formatTime(typedEvent.event_time)}
+                {hasEnd
+                  ? `${formatTime(typedEvent.event_time)} – ${formatTime(typedEvent.end_time!)}`
+                  : formatTime(typedEvent.event_time)}
               </span>
             </p>
             <p className="inline-flex max-w-full items-center gap-1.5">
@@ -191,6 +215,13 @@ export default async function EventDetailPage({ params }: EventPageProps) {
               <span className="sr-only">Location:</span>
               <span className="break-words text-foreground">
                 {typedEvent.location}
+              </span>
+            </p>
+            <p className="inline-flex max-w-full items-center gap-1.5">
+              <Users className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="sr-only">Capacity:</span>
+              <span className="text-foreground">
+                {formatAttendingLabel(attendees.length, typedEvent.max_attendees)}
               </span>
             </p>
           </section>
@@ -210,6 +241,7 @@ export default async function EventDetailPage({ params }: EventPageProps) {
                   eventId={typedEvent.id}
                   isAuthenticated={!!user}
                   hasRsvp={hasRsvp}
+                  isFull={isFull}
                 />
               </section>
             </>
@@ -219,7 +251,11 @@ export default async function EventDetailPage({ params }: EventPageProps) {
             <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Attendees
             </h2>
-            <AttendeeList attendees={attendees} isPast={past} />
+            <AttendeeList
+              attendees={attendees}
+              isPast={past}
+              maxAttendees={typedEvent.max_attendees}
+            />
           </section>
 
           {isOwner && (

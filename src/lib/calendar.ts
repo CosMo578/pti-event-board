@@ -5,33 +5,43 @@ function padTime(timeStr: string): string {
   return timeStr.length === 5 ? `${timeStr}:00` : timeStr;
 }
 
-function toUtcIcsDate(dateStr: string, timeStr: string): string {
-  const iso = `${dateStr}T${padTime(timeStr)}`;
-  const d = new Date(iso);
-  const end = new Date(d.getTime() + 60 * 60 * 1000);
-  const fmt = (dt: Date) =>
-    dt
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}/, "");
-  return `${fmt(d)}/${fmt(end)}`;
+function toDate(dateStr: string, timeStr: string): Date {
+  return new Date(`${dateStr}T${padTime(timeStr)}`);
+}
+
+function defaultEndDate(start: Date): Date {
+  return new Date(start.getTime() + 60 * 60 * 1000);
+}
+
+function resolveEventBounds(event: Event): { start: Date; end: Date } {
+  const start = toDate(event.event_date, event.event_time);
+  if (event.end_date && event.end_time) {
+    return { start, end: toDate(event.end_date, event.end_time) };
+  }
+  return { start, end: defaultEndDate(start) };
+}
+
+function fmtUtcIcs(dt: Date): string {
+  return dt
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
+}
+
+function fmtGoogle(dt: Date): string {
+  return dt
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z/, "Z");
 }
 
 export function buildGoogleCalendarUrl(event: Event): string {
-  const start = `${event.event_date}T${padTime(event.event_time)}`;
-  const startDate = new Date(start);
-  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-
-  const fmt = (d: Date) =>
-    d
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}Z/, "Z");
+  const { start, end } = resolveEventBounds(event);
 
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: event.title,
-    dates: `${fmt(startDate)}/${fmt(endDate)}`,
+    dates: `${fmtGoogle(start)}/${fmtGoogle(end)}`,
     details: htmlToPlainText(event.description),
     location: event.location,
   });
@@ -45,6 +55,7 @@ export function buildIcsContent(event: Event): string {
     .toISOString()
     .replace(/[-:]/g, "")
     .replace(/\.\d{3}Z/, "Z");
+  const { start, end } = resolveEventBounds(event);
 
   const escape = (s: string) =>
     s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
@@ -56,8 +67,8 @@ export function buildIcsContent(event: Event): string {
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${toUtcIcsDate(event.event_date, event.event_time).split("/")[0]}`,
-    `DTEND:${toUtcIcsDate(event.event_date, event.event_time).split("/")[1]}`,
+    `DTSTART:${fmtUtcIcs(start)}`,
+    `DTEND:${fmtUtcIcs(end)}`,
     `SUMMARY:${escape(event.title)}`,
     `DESCRIPTION:${escape(htmlToPlainText(event.description))}`,
     `LOCATION:${escape(event.location)}`,

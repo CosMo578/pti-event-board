@@ -37,6 +37,11 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
   const [eventTime, setEventTime] = useState(
     event?.event_time?.slice(0, 5) ?? "",
   );
+  const [endDate, setEndDate] = useState(event?.end_date ?? "");
+  const [endTime, setEndTime] = useState(event?.end_time?.slice(0, 5) ?? "");
+  const [maxAttendees, setMaxAttendees] = useState(
+    event?.max_attendees != null ? String(event.max_attendees) : "",
+  );
   const [location, setLocation] = useState(event?.location ?? "");
   const [category, setCategory] = useState(
     event ? categoryToLabel(event.category) : "",
@@ -152,11 +157,32 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
         return;
       }
 
+      const trimmedMax = maxAttendees.trim();
+      let maxAttendeesValue: number | null = null;
+      if (trimmedMax !== "") {
+        const parsed = Number(trimmedMax);
+        if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10000) {
+          setError("Max attendees must be a whole number between 1 and 10000.");
+          return;
+        }
+        maxAttendeesValue = parsed;
+      }
+
+      const hasEndDate = endDate.trim() !== "";
+      const hasEndTime = endTime.trim() !== "";
+      if (hasEndDate !== hasEndTime) {
+        setError("Please provide both end date and end time, or leave both empty.");
+        return;
+      }
+
       const payload = {
         title,
         description,
         event_date: eventDate,
         event_time: eventTime,
+        end_date: hasEndDate ? endDate : null,
+        end_time: hasEndTime ? endTime : null,
+        max_attendees: maxAttendeesValue,
         location,
         category: categoryValue,
         flyer_url: flyerUrl,
@@ -259,6 +285,55 @@ export function EventForm({ mode = "create", event }: EventFormProps) {
             className={fieldClassName}
           />
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="min-w-0">
+          <Label htmlFor="endDate">End date (optional)</Label>
+          <Input
+            id="endDate"
+            type="date"
+            disabled={loading}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            min={eventDate || undefined}
+            className={fieldClassName}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <Label htmlFor="endTime">End time (optional)</Label>
+          <Input
+            id="endTime"
+            type="time"
+            disabled={loading}
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className={fieldClassName}
+          />
+        </div>
+      </div>
+      <p className="-mt-3 text-xs text-muted-foreground">
+        For multi-day or longer events. If you set one, both are required.
+      </p>
+
+      <div className="min-w-0">
+        <Label htmlFor="maxAttendees">Max attendees (optional)</Label>
+        <Input
+          id="maxAttendees"
+          type="number"
+          min={1}
+          max={10000}
+          step={1}
+          disabled={loading}
+          value={maxAttendees}
+          onChange={(e) => setMaxAttendees(e.target.value)}
+          className={fieldClassName}
+          placeholder="Leave empty for unlimited"
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Leave empty for unlimited capacity
+        </p>
       </div>
 
       <div className="min-w-0">

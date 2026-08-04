@@ -8,7 +8,10 @@ import { labelToCategory } from "@/lib/constants";
 import {
   escapeIlike,
   normalizeHashtagQuery,
+  nowTimeString,
+  pastEventsOrFilter,
   todayDateString,
+  upcomingEventsOrFilter,
 } from "@/lib/event-query";
 import type { Event, EventWithRsvpCount } from "@/lib/types/database";
 
@@ -32,7 +35,9 @@ export default async function Home({ searchParams }: HomeProps) {
   } = await supabase.auth.getUser();
 
   const showPast = !!user;
-  const today = todayDateString();
+  const now = new Date();
+  const today = todayDateString(now);
+  const nowTime = nowTimeString(now);
   const isPast = showPast && params.view === "past";
 
   let query = supabase
@@ -42,12 +47,12 @@ export default async function Home({ searchParams }: HomeProps) {
 
   if (isPast) {
     query = query
-      .lt("event_date", today)
+      .or(pastEventsOrFilter(today, nowTime))
       .order("event_date", { ascending: false })
       .order("event_time", { ascending: false });
   } else {
     query = query
-      .gte("event_date", today)
+      .or(upcomingEventsOrFilter(today, nowTime))
       .order("event_date", { ascending: true })
       .order("event_time", { ascending: true });
   }

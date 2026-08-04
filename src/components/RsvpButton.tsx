@@ -10,17 +10,20 @@ import {
   AvatarGroupCount,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { formatAttendingLabel } from "@/lib/event-query";
 
 interface RsvpButtonProps {
   eventId: string;
   isAuthenticated: boolean;
   hasRsvp: boolean;
+  isFull?: boolean;
 }
 
 export function RsvpButton({
   eventId,
   isAuthenticated,
   hasRsvp: initialHasRsvp,
+  isFull = false,
 }: RsvpButtonProps) {
   const router = useRouter();
   const [hasRsvp, setHasRsvp] = useState(initialHasRsvp);
@@ -31,6 +34,14 @@ export function RsvpButton({
     return (
       <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         Sign in with Google to RSVP for this event.
+      </p>
+    );
+  }
+
+  if (isFull && !hasRsvp) {
+    return (
+      <p className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+        This event is full.
       </p>
     );
   }
@@ -89,14 +100,21 @@ const MAX_VISIBLE_ATTENDEES = 5;
 interface AttendeeListProps {
   attendees: { display_name: string; avatar_url: string | null; user_id: string }[];
   isPast?: boolean;
+  maxAttendees?: number | null;
 }
 
-export function AttendeeList({ attendees, isPast = false }: AttendeeListProps) {
+export function AttendeeList({
+  attendees,
+  isPast = false,
+  maxAttendees = null,
+}: AttendeeListProps) {
   if (attendees.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
         {isPast ? (
           <>No one RSVP&apos;d to this event.</>
+        ) : maxAttendees != null ? (
+          <>No one has RSVP&apos;d yet (0 / {maxAttendees}). Be the first!</>
         ) : (
           <>No one has RSVP&apos;d yet. Be the first!</>
         )}
@@ -110,8 +128,7 @@ export function AttendeeList({ attendees, isPast = false }: AttendeeListProps) {
   return (
     <div className="min-w-0 space-y-3">
       <p className="text-sm font-medium text-foreground">
-        {attendees.length} {attendees.length === 1 ? "person" : "people"}{" "}
-        attending
+        {formatAttendingLabel(attendees.length, maxAttendees)}
       </p>
       <AvatarGroup>
         {visible.map((attendee) => (

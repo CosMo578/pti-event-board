@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isPastEvent } from "@/lib/event-query";
 import { getGoogleAvatarUrl, getGoogleDisplayName } from "@/lib/google-user";
-import { updateEventSchema } from "@/lib/validations/event";
+import {
+  updateEventSchema,
+  validateEventSchedule,
+} from "@/lib/validations/event";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -22,11 +25,23 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { data: existing, error: fetchError } = await supabase
     .from("events")
-    .select("created_by, event_date")
+    .select(
+      "created_by, event_date, event_time, end_date, end_time, max_attendees",
+    )
     .eq("id", id)
     .single();
 
-  if (fetchError || !existing) {
+  if (fetchError) {
+    if (fetchError.code !== "PGRST116") {
+      return NextResponse.json(
+        { error: fetchError.message },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  if (!existing) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
@@ -34,7 +49,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (isPastEvent(existing.event_date)) {
+  if (isPastEvent(existing)) {
     return NextResponse.json(
       { error: "Past events cannot be updated." },
       { status: 403 },
@@ -54,6 +69,47 @@ export async function PATCH(request: Request, context: RouteContext) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 },
     );
+  }
+
+  const merged = {
+    event_date: parsed.data.event_date ?? existing.event_date,
+    event_time: parsed.data.event_time ?? existing.event_time,
+    end_date:
+      "end_date" in parsed.data
+        ? (parsed.data.end_date ?? null)
+        : existing.end_date,
+    end_time:
+      "end_time" in parsed.data
+        ? (parsed.data.end_time ?? null)
+        : existing.end_time,
+  };
+
+  const scheduleError = validateEventSchedule(merged);
+  if (scheduleError) {
+    return NextResponse.json({ error: scheduleError }, { status: 400 });
+  }
+
+  if (
+    "max_attendees" in parsed.data &&
+    parsed.data.max_attendees != null
+  ) {
+    const { count, error: countError } = await supabase
+      .from("event_rsvps")
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", id);
+
+    if (countError) {
+      return NextResponse.json({ error: countError.message }, { status: 500 });
+    }
+
+    if ((count ?? 0) > parsed.data.max_attendees) {
+      return NextResponse.json(
+        {
+          error: `Cannot set max attendees below the current RSVP count (${count}).`,
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const { data, error } = await supabase
@@ -88,11 +144,21 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   const { data: existing, error: fetchError } = await supabase
     .from("events")
-    .select("created_by, event_date")
+    .select("created_by, event_date, end_date, end_time")
     .eq("id", id)
     .single();
 
-  if (fetchError || !existing) {
+  if (fetchError) {
+    if (fetchError.code !== "PGRST116") {
+      return NextResponse.json(
+        { error: fetchError.message },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  if (!existing) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
@@ -100,7 +166,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (isPastEvent(existing.event_date)) {
+  if (isPastEvent(existing)) {
     return NextResponse.json(
       { error: "Past events cannot be deleted." },
       { status: 403 },

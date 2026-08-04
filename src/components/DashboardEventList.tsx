@@ -13,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { CATEGORY_COLORS, categoryToLabel } from "@/lib/constants";
-import { isPastEvent } from "@/lib/event-query";
+import { formatAttendingLabel, isPastEvent } from "@/lib/event-query";
 import { htmlToPlainText } from "@/lib/rich-text";
 import type { Event, EventRsvp } from "@/lib/types/database";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,13 @@ function formatDate(dateStr: string) {
     month: "short",
     day: "numeric",
   });
+}
+
+function formatEventDateLabel(event: DashboardEvent) {
+  if (event.end_date && event.end_date !== event.event_date) {
+    return `${formatDate(event.event_date)} – ${formatDate(event.end_date)}`;
+  }
+  return formatDate(event.event_date);
 }
 
 export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
@@ -111,7 +118,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
 
       <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {events.map((event) => {
-          const past = isPastEvent(event.event_date);
+          const past = isPastEvent(event);
           const badgeClass = CATEGORY_COLORS[event.category];
 
           return (
@@ -147,7 +154,7 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
               <CardContent className="flex min-w-0 flex-1 flex-col gap-2 px-4 pb-3 text-sm text-muted-foreground">
                 <span className="inline-flex min-w-0 items-center gap-1.5">
                   <CalendarDays className="size-3.5 shrink-0" />
-                  <span className="truncate">{formatDate(event.event_date)}</span>
+                  <span className="truncate">{formatEventDateLabel(event)}</span>
                 </span>
                 <span className="inline-flex min-w-0 items-center gap-1.5">
                   <MapPin className="size-3.5 shrink-0" />
@@ -155,7 +162,9 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
                 </span>
                 <span className="mt-auto inline-flex items-center gap-1.5 font-medium text-pti-green">
                   <Users className="size-3.5 shrink-0" />
-                  {event.rsvp_count} RSVP{event.rsvp_count === 1 ? "" : "s"}
+                  {event.max_attendees != null
+                    ? `${event.rsvp_count} / ${event.max_attendees} RSVPs`
+                    : `${event.rsvp_count} RSVP${event.rsvp_count === 1 ? "" : "s"}`}
                 </span>
               </CardContent>
 
@@ -224,8 +233,11 @@ export function DashboardEventList({ events }: { events: DashboardEvent[] }) {
           <DialogHeader>
             <DialogTitle>Attendees</DialogTitle>
             <DialogDescription>
-              {attendeesEvent?.title} — {attendeesEvent?.rsvp_count ?? 0}{" "}
-              RSVP{(attendeesEvent?.rsvp_count ?? 0) === 1 ? "" : "s"}
+              {attendeesEvent?.title} —{" "}
+              {formatAttendingLabel(
+                attendeesEvent?.rsvp_count ?? 0,
+                attendeesEvent?.max_attendees,
+              )}
             </DialogDescription>
           </DialogHeader>
 
