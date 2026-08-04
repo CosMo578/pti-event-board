@@ -20,6 +20,20 @@ export function getSignInMessage(reason: string | null | undefined): string {
   return SIGN_IN_MESSAGES.default;
 }
 
+/** Paths that require sign-in; everything else is browseable publicly. */
+export function isProtectedPath(pathname: string): boolean {
+  if (pathname === "/create" || pathname.startsWith("/create/")) {
+    return true;
+  }
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    return true;
+  }
+  if (/^\/events\/[^/]+\/edit(?:\/|$)/.test(pathname)) {
+    return true;
+  }
+  return false;
+}
+
 /** Map a pathname to a contextual sign-in toast reason. */
 export function getSignInReasonForPath(pathname: string): SignInReason {
   if (pathname === "/create" || pathname.startsWith("/create/")) {
@@ -28,7 +42,7 @@ export function getSignInReasonForPath(pathname: string): SignInReason {
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
     return "dashboard";
   }
-  if (/^\/events\/[^/]+\/edit/.test(pathname)) {
+  if (/^\/events\/[^/]+\/edit(?:\/|$)/.test(pathname)) {
     return "edit";
   }
   if (pathname.startsWith("/events/")) {
@@ -39,8 +53,5 @@ export function getSignInReasonForPath(pathname: string): SignInReason {
 
 /** Paths that signed-out users may access without redirect. */
 export function isPublicPath(pathname: string): boolean {
-  if (pathname === "/") return true;
-  if (pathname.startsWith("/auth/")) return true;
-  if (pathname.startsWith("/api/")) return true;
-  return false;
+  return !isProtectedPath(pathname);
 }

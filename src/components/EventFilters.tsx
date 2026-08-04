@@ -22,10 +22,13 @@ export function EventFilters() {
   const qParam = searchParams.get("q") ?? "";
 
   const [query, setQuery] = useState(qParam);
+  const [syncedQParam, setSyncedQParam] = useState(qParam);
 
-  useEffect(() => {
+  // Sync local search draft when the URL `q` changes externally (back/forward, etc.).
+  if (qParam !== syncedQParam) {
+    setSyncedQParam(qParam);
     setQuery(qParam);
-  }, [qParam]);
+  }
 
   const updateParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
